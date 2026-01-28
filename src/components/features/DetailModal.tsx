@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import type { ExtractedResolution } from "@/types";
 import styles from "./DetailModal.module.css";
@@ -18,6 +18,12 @@ export function DetailModal({
 }: DetailModalProps): ReactNode {
   const [editedResult, setEditedResult] = useState(result);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Sync state with prop when result changes (e.g., switching between items)
+  useEffect(() => {
+    setEditedResult(result);
+    setHasChanges(false);
+  }, [result]);
 
   const handleFieldChange = useCallback(
     (field: string, value: string | boolean) => {
