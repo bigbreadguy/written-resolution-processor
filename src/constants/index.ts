@@ -43,7 +43,7 @@ export const MEDIA_RESOLUTION = "medium" as const; // 560 tokens per image
 import type { ApiTier, TierLimits } from "@/types";
 
 export const TIER_LIMITS: Record<ApiTier, TierLimits> = {
-  free: { rpm: 15, tpm: 250_000, rpd: 250 },
+  free: { rpm: 10, tpm: 250_000, rpd: 250 },
   tier1: { rpm: 1_000, tpm: 4_000_000, rpd: 10_000 },
   tier2: { rpm: 2_000, tpm: 4_000_000, rpd: null },
 } as const;
