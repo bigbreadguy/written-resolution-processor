@@ -141,6 +141,7 @@ export function App(): ReactNode {
   const { hasAcknowledged, acknowledge } = useAiAcknowledgment();
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isKeyManagerOpen, setIsKeyManagerOpen] = useState(false);
+  const [processingError, setProcessingError] = useState<string | null>(null);
 
   // Sync external state with reducer
   // Non-blocking: users can proceed to upload even without keys
@@ -172,6 +173,7 @@ export function App(): ReactNode {
   );
 
   const handleFilesChange = useCallback((files: ProcessableFile[]) => {
+    setProcessingError(null);
     dispatch({ type: "CLEAR_FILES" });
     dispatch({ type: "ADD_FILES", payload: files });
   }, []);
@@ -226,8 +228,7 @@ export function App(): ReactNode {
       } else {
         const errorMessage = e instanceof Error ? e.message : "Unknown error";
         dispatch({ type: "PROCESSING_ERROR", payload: errorMessage });
-        // Show error to user - could add a toast notification here
-        console.error("Processing error:", errorMessage);
+        setProcessingError(errorMessage);
       }
     } finally {
       abortControllerRef.current = null;
@@ -283,12 +284,30 @@ export function App(): ReactNode {
       )}
 
       {effectiveState.step === "upload" && (
-        <FileUpload
-          files={effectiveState.files}
-          onFilesChange={handleFilesChange}
-          onStartProcessing={handleStartProcessing}
-          isProcessing={false}
-        />
+        <>
+          {processingError ? (
+            <div className={styles.errorBanner} role="alert">
+              <span className={styles.errorIcon}>⚠️</span>
+              <span className={styles.errorText}>
+                처리 중 오류가 발생했습니다: {processingError}
+              </span>
+              <button
+                type="button"
+                className={styles.errorDismiss}
+                onClick={() => { setProcessingError(null); }}
+                aria-label="오류 메시지 닫기"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
+          <FileUpload
+            files={effectiveState.files}
+            onFilesChange={handleFilesChange}
+            onStartProcessing={handleStartProcessing}
+            isProcessing={false}
+          />
+        </>
       )}
 
       {effectiveState.step === "processing" && effectiveState.processingProgress && (

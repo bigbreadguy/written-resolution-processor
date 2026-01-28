@@ -1,3 +1,40 @@
 .app {
   min-height: 100vh;
 }
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  margin: 1rem auto;
+  max-width: 800px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #991b1b;
+}
+
+.errorIcon {
+  flex-shrink: 0;
+}
+
+.errorText {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.errorDismiss {
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #991b1b;
+  opacity: 0.7;
+}
+
+.errorDismiss:hover {
+  opacity: 1;
+}
