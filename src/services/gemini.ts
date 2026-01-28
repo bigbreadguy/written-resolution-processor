@@ -38,13 +38,20 @@ IMPORTANT GUIDELINES:
    - Add extraction_notes for specific issues (e.g., "blurry signature area", "handwritten name")
 
 4. VOTE RECOGNITION
-   - Look for checkmarks (✓), circles (○), or filled boxes (■)
-   - Common options: 찬성 (approve), 반대 (reject), 기권 (abstain)
+   - Look for various mark types: ✓, V, ○, O, ■, X, or heavy ink marks (굵은 점)
+   - CRITICAL: Determine vote by column position (찬성/반대/기권 columns)
+   - Common vote options:
+     - 찬성 (approve/in favor)
+     - 반대 (reject/against)
+     - 기권 (abstain)
+   - Handle "기표안함" (unmarked): If no mark is found in any column, set voted to ["기표안함"]
+   - If multiple marks detected, add note and flag for review
    - Extract ALL agenda items and their votes
 
 5. HANDLING UNCERTAINTY
    - If a field is completely illegible, set the value to "[불명]" (unclear)
-   - Never guess - mark as uncertain and flag for review`;
+   - Never guess - mark as uncertain and flag for review
+   - For ambiguous vote marks, note which columns might have marks`;
 
 const EXTRACTION_PROMPT = `이 서면결의서 이미지에서 다음 정보를 추출해주세요:
 
@@ -58,16 +65,19 @@ const EXTRACTION_PROMPT = `이 서면결의서 이미지에서 다음 정보를 
    - contact_number: 연락처 (010-XXXX-XXXX 형식으로 정규화)
 4. votes: 각 안건별 투표 내용
    - agenda: 안건 내용
-   - options: 선택 가능한 옵션들
-   - voted: 실제 선택된 옵션
+   - options: 선택 가능한 옵션들 (보통 ["찬성", "반대", "기권"])
+   - voted: 실제 선택된 옵션 (표시 없으면 ["기표안함"])
 5. _meta:
    - confidence: 전체적인 추출 신뢰도 (high/medium/low)
    - requires_review: 사람이 검토해야 하는지 여부
-   - extraction_notes: 추출 과정에서 발견된 문제점들
+   - extraction_notes: 추출 과정에서 발견된 문제점들 (예: "제2안건 복수 표시", "서명란 불명확")
 
 주의사항:
 - 모든 안건을 빠짐없이 추출하세요
-- 체크박스, 동그라미, 손글씨 표시 모두 인식하세요
+- 체크표시(✓,V), 동그라미(○,O), 엑스(X), 진한 점 모두 인식하세요
+- 열(column) 위치를 기준으로 찬성/반대/기권 판단하세요
+- 어느 열에도 표시가 없으면 voted를 ["기표안함"]으로 설정하세요
+- 복수 표시가 있으면 extraction_notes에 기록하고 requires_review=true
 - 불확실한 부분은 반드시 requires_review=true로 표시하세요`;
 
 const responseSchema = {
