@@ -51,7 +51,12 @@ IMPORTANT GUIDELINES:
 5. HANDLING UNCERTAINTY
    - If a field is completely illegible, set the value to "[불명]" (unclear)
    - Never guess - mark as uncertain and flag for review
-   - For ambiguous vote marks, note which columns might have marks`;
+   - For ambiguous vote marks, note which columns might have marks
+
+6. LANGUAGE REQUIREMENT
+   - ALL extraction_notes MUST be written in Korean
+   - Examples: "서명란 불명확", "제2안건 복수 표시", "손글씨 인식 불확실"
+   - Never use English in extraction_notes`;
 
 const EXTRACTION_PROMPT = `이 서면결의서 이미지에서 다음 정보를 추출해주세요:
 
@@ -78,7 +83,8 @@ const EXTRACTION_PROMPT = `이 서면결의서 이미지에서 다음 정보를 
 - 열(column) 위치를 기준으로 찬성/반대/기권 판단하세요
 - 어느 열에도 표시가 없으면 voted를 ["기표안함"]으로 설정하세요
 - 복수 표시가 있으면 extraction_notes에 기록하고 requires_review=true
-- 불확실한 부분은 반드시 requires_review=true로 표시하세요`;
+- 불확실한 부분은 반드시 requires_review=true로 표시하세요
+- extraction_notes는 반드시 한국어로 작성하세요 (예: "서명란 흐림", "손글씨 판독 어려움")`;
 
 const responseSchema = {
   type: SchemaType.OBJECT,
