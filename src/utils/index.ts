@@ -12,3 +12,5 @@ export {
 } from "./fileValidation";
 
 export { withRetry, type RetryOptions } from "./retry";
+
+export { maskKey } from "./string";

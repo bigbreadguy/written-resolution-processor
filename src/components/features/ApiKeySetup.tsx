@@ -8,6 +8,7 @@
 import { type ReactNode, useCallback, useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { API_KEY_WARNING, TIER_LABELS } from "@/constants";
+import { maskKey } from "@/utils";
 import type { ApiKeyEntry, ApiTier } from "@/types";
 import styles from "./ApiKeySetup.module.css";
 
@@ -68,11 +69,6 @@ export function ApiKeySetup({
     },
     [inputValue, selectedTier, onAddKey]
   );
-
-  const maskKey = (key: string): string => {
-    if (key.length <= 12) return key;
-    return `${key.slice(0, 8)}...${key.slice(-4)}`;
-  };
 
   // If we have keys, show the "add more" or "continue" state
   if (apiKeys.length > 0 && showAddMore) {
