@@ -1,8 +1,8 @@
 import { type ReactNode, useCallback, useReducer, useRef, useState } from "react";
 import {
   AiDisclosure,
-  ApiKeySetup,
   ApiKeyManager,
+  AppHeader,
   FileUpload,
   ProcessingView,
   ReviewTable,
@@ -36,19 +36,17 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         hasAcknowledgedAI: true,
-        step: state.apiKeys.length > 0 ? "upload" : "api-key-setup",
+        step: "upload",
       };
     case "SET_API_KEYS":
       return {
         ...state,
         apiKeys: action.payload,
-        step: action.payload.length > 0 ? "upload" : "api-key-setup",
       };
     case "CLEAR_API_KEYS":
       return {
         ...state,
         apiKeys: [],
-        step: "api-key-setup",
       };
     case "GO_TO_STEP":
       return {
@@ -145,18 +143,20 @@ export function App(): ReactNode {
   const [isKeyManagerOpen, setIsKeyManagerOpen] = useState(false);
 
   // Sync external state with reducer
+  // Non-blocking: users can proceed to upload even without keys
   const effectiveState: AppState = {
     ...state,
     apiKeys,
     hasAcknowledgedAI: hasAcknowledged,
     step: !hasAcknowledged
       ? "landing"
-      : apiKeys.length === 0
-        ? "api-key-setup"
-        : state.step === "landing" || state.step === "api-key-setup"
-          ? "upload"
-          : state.step,
+      : state.step === "landing"
+        ? "upload"
+        : state.step,
   };
+
+  // Determine if we should show key warning (on upload with no keys)
+  const showKeyWarning = effectiveState.step === "upload" && apiKeys.length === 0;
 
   const handleAcknowledge = useCallback(() => {
     acknowledge();
@@ -171,17 +171,17 @@ export function App(): ReactNode {
     [addApiKey]
   );
 
-  const handleContinueFromSetup = useCallback(() => {
-    dispatch({ type: "SET_API_KEYS", payload: apiKeys });
-  }, [apiKeys]);
-
   const handleFilesChange = useCallback((files: ProcessableFile[]) => {
     dispatch({ type: "CLEAR_FILES" });
     dispatch({ type: "ADD_FILES", payload: files });
   }, []);
 
   const handleStartProcessing = useCallback(async () => {
-    if (effectiveState.apiKeys.length === 0) return;
+    if (effectiveState.apiKeys.length === 0) {
+      // No keys - open key manager instead
+      setIsKeyManagerOpen(true);
+      return;
+    }
 
     const readyFiles = effectiveState.files.filter((f) => f.status === "ready");
     if (readyFiles.length === 0) return;
@@ -264,19 +264,21 @@ export function App(): ReactNode {
       ? effectiveState.results[effectiveState.selectedResultIndex]
       : null;
 
+  const handleOpenKeyManager = useCallback(() => {
+    setIsKeyManagerOpen(true);
+  }, []);
+
   return (
     <div className={styles.app}>
       {effectiveState.step === "landing" && (
         <AiDisclosure onAcknowledge={handleAcknowledge} />
       )}
 
-      {effectiveState.step === "api-key-setup" && (
-        <ApiKeySetup
+      {effectiveState.step !== "landing" && (
+        <AppHeader
           apiKeys={effectiveState.apiKeys}
-          onAddKey={handleAddApiKey}
-          onContinue={handleContinueFromSetup}
-          isValidating={isValidating}
-          error={error}
+          onManageKeys={handleOpenKeyManager}
+          showKeyWarning={showKeyWarning}
         />
       )}
 
