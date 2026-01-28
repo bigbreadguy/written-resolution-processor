@@ -112,3 +112,136 @@
   font-size: 12px;
   opacity: 0.8;
 }
+
+/* Tier selection */
+.tierSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tierLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tierLabelHint {
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin-left: 4px;
+}
+
+.tierSelect {
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.tierSelect:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.tierHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* Registered keys state */
+.registeredKeys {
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #dcfce7;
+  border-radius: var(--radius);
+}
+
+.registeredLabel {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.registeredKey {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #166534;
+  border-bottom: 1px solid rgba(22, 101, 52, 0.2);
+}
+
+.registeredKey:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tierBadge {
+  font-size: 12px;
+  padding: 2px 8px;
+  background-color: rgba(22, 101, 52, 0.2);
+  border-radius: 4px;
+}
+
+/* Add more form */
+.addMoreForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.addMoreLabel {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.inputRow {
+  display: flex;
+  gap: 12px;
+}
+
+.inputRow > *:first-child {
+  flex: 1;
+}
+
+.addMoreActions {
+  display: flex;
+  gap: 12px;
+}
+
+.addMoreActions > *:last-child {
+  flex: 1;
+}
+
+.addMoreHint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .inputRow {
+    flex-direction: column;
+  }
+
+  .addMoreActions {
+    flex-direction: column;
+  }
+
+  .addMoreActions > *:last-child {
+    flex: none;
+  }
+}
