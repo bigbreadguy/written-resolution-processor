@@ -9,6 +9,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import { TIER_LABELS, TIER_LIMITS } from "@/constants";
 import { getRateLimiter, type KeyStatus } from "@/services/rateLimiter";
+import { maskKey } from "@/utils";
 import type { ApiKeyEntry, ApiTier } from "@/types";
 import styles from "./ApiKeyManager.module.css";
 
@@ -72,11 +73,6 @@ export function ApiKeyManager({
     },
     [handleAddKey, newKey]
   );
-
-  const maskKey = (key: string): string => {
-    if (key.length <= 12) return key;
-    return `${key.slice(0, 8)}...${key.slice(-4)}`;
-  };
 
   const getStatusForKey = (keyId: string): KeyStatus | undefined => {
     return keyStatuses.find((s) => s.keyId === keyId);
