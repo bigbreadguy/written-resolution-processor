@@ -3,12 +3,14 @@ import {
   SchemaType,
   type GenerationConfig,
 } from "@google/generative-ai";
-import { GEMINI_MODEL, BATCH_SIZE } from "@/constants";
+import { GEMINI_MODEL, BATCH_SIZE, RATE_LIMIT_CONFIG } from "@/constants";
 import { withRetry } from "@/utils";
+import { getRateLimiter, type RateLimiter } from "./rateLimiter";
 import type {
+  ApiKeyEntry,
   ExtractedResolution,
   GeminiExtractionResponse,
-  ProcessingProgress,
+  ProcessingProgressExtended,
   FileProcessingStatus,
 } from "@/types";
 
@@ -123,9 +125,9 @@ interface ImageInput {
 }
 
 export interface ProcessFilesOptions {
-  apiKey: string;
+  apiKeys: ApiKeyEntry[];
   images: ImageInput[];
-  onProgress: (progress: ProcessingProgress) => void;
+  onProgress: (progress: ProcessingProgressExtended) => void;
   signal?: AbortSignal | undefined;
 }
 
@@ -179,7 +181,7 @@ async function processImage(
     _meta: {
       confidence: result._meta.confidence,
       requires_review: result._meta.requires_review,
-      extraction_notes: result._meta.extraction_notes ?? [],
+      extraction_notes: result._meta.extraction_notes,
       source_file: image.sourceFile,
       page_number: image.pageNumber,
       processed_at: new Date().toISOString(),
@@ -189,21 +191,60 @@ async function processImage(
   return extracted;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes("rate limit") ||
+      message.includes("quota") ||
+      message.includes("429") ||
+      message.includes("resource exhausted")
+    );
+  }
+  return false;
+}
+
+function createProgress(
+  images: ImageInput[],
+  results: ExtractedResolution[],
+  statuses: Map<string, FileProcessingStatus>,
+  batchIndex: number,
+  totalBatches: number,
+  rateLimiter: RateLimiter,
+  isWaiting: boolean,
+  waitTimeMs: number
+): ProcessingProgressExtended {
+  return {
+    total: images.length,
+    completed: results.length,
+    failed: Array.from(statuses.values()).filter((s) => s.state === "error").length,
+    currentBatch: batchIndex + 1,
+    totalBatches,
+    statuses: new Map(statuses),
+    keyStatuses: rateLimiter.getKeyStatuses(),
+    isWaitingForKey: isWaiting,
+    waitTimeMs,
+  };
+}
+
 export async function processFiles({
-  apiKey,
+  apiKeys,
   images,
   onProgress,
   signal,
 }: ProcessFilesOptions): Promise<ExtractedResolution[]> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    systemInstruction: SYSTEM_PROMPT,
-    generationConfig,
-  });
+  if (apiKeys.length === 0) {
+    throw new Error("No API keys provided");
+  }
 
+  const rateLimiter = getRateLimiter(apiKeys);
   const results: ExtractedResolution[] = [];
   const statuses = new Map<string, FileProcessingStatus>();
+  const processedIds = new Set<string>();
 
   // Initialize all statuses as pending
   for (const image of images) {
@@ -213,6 +254,23 @@ export async function processFiles({
   const batches = createBatches(images, BATCH_SIZE);
   const totalBatches = batches.length;
 
+  // Cache for models by key ID to avoid recreating
+  const modelCache = new Map<string, ReturnType<GoogleGenerativeAI["getGenerativeModel"]>>();
+
+  const getModelForKey = (keyEntry: ApiKeyEntry): ReturnType<GoogleGenerativeAI["getGenerativeModel"]> => {
+    let model = modelCache.get(keyEntry.id);
+    if (!model) {
+      const genAI = new GoogleGenerativeAI(keyEntry.key);
+      model = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        systemInstruction: SYSTEM_PROMPT,
+        generationConfig,
+      });
+      modelCache.set(keyEntry.id, model);
+    }
+    return model;
+  };
+
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
     if (signal?.aborted) {
       throw new DOMException("Aborted", "AbortError");
@@ -221,40 +279,90 @@ export async function processFiles({
     const batch = batches[batchIndex];
     if (!batch) continue;
 
-    // Process batch sequentially to avoid rate limits
+    // Process batch sequentially with rate limiting
     for (const image of batch) {
       if (signal?.aborted) {
         throw new DOMException("Aborted", "AbortError");
       }
 
-      statuses.set(image.id, { state: "processing" });
-      onProgress({
-        total: images.length,
-        completed: results.length,
-        failed: Array.from(statuses.values()).filter((s) => s.state === "error").length,
-        currentBatch: batchIndex + 1,
-        totalBatches,
-        statuses: new Map(statuses),
-      });
-
-      try {
-        const result = await processImage(model, image, signal);
-        results.push(result);
-        statuses.set(image.id, { state: "done", result });
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        statuses.set(image.id, { state: "error", error: errorMessage });
+      // Skip if already processed (deduplication)
+      if (processedIds.has(image.id)) {
+        continue;
       }
 
-      onProgress({
-        total: images.length,
-        completed: results.length,
-        failed: Array.from(statuses.values()).filter((s) => s.state === "error").length,
-        currentBatch: batchIndex + 1,
-        totalBatches,
-        statuses: new Map(statuses),
-      });
+      statuses.set(image.id, { state: "processing" });
+      onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, rateLimiter, false, 0));
+
+      let retryCount = 0;
+      let success = false;
+
+      while (!success && retryCount < RATE_LIMIT_CONFIG.maxRetriesPerImage) {
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
+        // Get best available key
+        const bestKey = rateLimiter.getBestKey();
+
+        if (!bestKey) {
+          // All keys exhausted, wait for refill
+          const waitTime = rateLimiter.getWaitTime();
+
+          if (waitTime > RATE_LIMIT_CONFIG.maxWaitTimeMs) {
+            // Wait time too long, fail the remaining items
+            statuses.set(image.id, {
+              state: "error",
+              error: "All API keys exhausted. Please try again later or add more keys."
+            });
+            break;
+          }
+
+          // Report waiting status
+          onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, rateLimiter, true, waitTime));
+
+          // Wait for key to become available
+          await sleep(Math.min(waitTime, 5000)); // Check every 5 seconds max
+          retryCount++;
+          continue;
+        }
+
+        try {
+          // Consume a request token
+          rateLimiter.consumeRequest(bestKey.id);
+
+          const model = getModelForKey(bestKey);
+          const result = await processImage(model, image, signal);
+
+          results.push(result);
+          statuses.set(image.id, { state: "done", result });
+          processedIds.add(image.id);
+          success = true;
+        } catch (error) {
+          if (isRateLimitError(error)) {
+            // Mark this key as exhausted and retry with another
+            rateLimiter.markExhausted(bestKey.id);
+            retryCount++;
+            continue;
+          }
+
+          // Non-rate-limit error
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          statuses.set(image.id, { state: "error", error: errorMessage });
+          processedIds.add(image.id);
+          break;
+        }
+      }
+
+      // If we exhausted retries without success
+      if (!success && statuses.get(image.id)?.state === "processing") {
+        statuses.set(image.id, {
+          state: "error",
+          error: "Rate limit exceeded. Please try again later."
+        });
+        processedIds.add(image.id);
+      }
+
+      onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, rateLimiter, false, 0));
     }
   }
 

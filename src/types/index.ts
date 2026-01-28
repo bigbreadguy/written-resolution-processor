@@ -145,10 +145,11 @@ export type AppStep =
  */
 export interface AppState {
   step: AppStep;
-  apiKey: string | null;
+  /** Multiple API keys with tier information */
+  apiKeys: ApiKeyEntry[];
   hasAcknowledgedAI: boolean;
   files: ProcessableFile[];
-  processingProgress: ProcessingProgress | null;
+  processingProgress: ProcessingProgressExtended | null;
   results: ExtractedResolution[];
   selectedResultIndex: number | null;
 }
@@ -158,14 +159,14 @@ export interface AppState {
  */
 export type AppAction =
   | { type: "ACKNOWLEDGE_AI" }
-  | { type: "SET_API_KEY"; payload: string }
-  | { type: "CLEAR_API_KEY" }
+  | { type: "SET_API_KEYS"; payload: ApiKeyEntry[] }
+  | { type: "CLEAR_API_KEYS" }
   | { type: "GO_TO_STEP"; payload: AppStep }
   | { type: "ADD_FILES"; payload: ProcessableFile[] }
   | { type: "REMOVE_FILE"; payload: string }
   | { type: "CLEAR_FILES" }
   | { type: "START_PROCESSING" }
-  | { type: "UPDATE_PROGRESS"; payload: ProcessingProgress }
+  | { type: "UPDATE_PROGRESS"; payload: ProcessingProgressExtended }
   | { type: "PROCESSING_COMPLETE"; payload: ExtractedResolution[] }
   | { type: "PROCESSING_ERROR"; payload: string }
   | { type: "UPDATE_RESULT"; payload: { index: number; data: Partial<ExtractedResolution> } }
@@ -186,4 +187,94 @@ export interface ApiError {
   type: ApiErrorType;
   message: string;
   retryable: boolean;
+}
+
+// ============================================================
+// Multi-Key Rate Limiting Types
+// ============================================================
+
+/**
+ * Gemini API tier levels
+ * - free: 15 RPM, 250K TPM, 250 RPD
+ * - tier1: 1,000 RPM, 4M TPM, 10,000 RPD
+ * - tier2: 2,000 RPM, 4M TPM, unlimited RPD
+ */
+export type ApiTier = "free" | "tier1" | "tier2";
+
+/**
+ * Rate limits for each tier
+ * RPM = Requests Per Minute
+ * TPM = Tokens Per Minute
+ * RPD = Requests Per Day (null = unlimited)
+ */
+export interface TierLimits {
+  rpm: number;
+  tpm: number;
+  rpd: number | null;
+}
+
+/**
+ * API key entry with tier information
+ */
+export interface ApiKeyEntry {
+  /** Unique identifier for this key entry */
+  id: string;
+  /** The actual API key (AIza...) */
+  key: string;
+  /** User-selected tier for rate limiting */
+  tier: ApiTier;
+  /** Optional user-friendly label */
+  label?: string | undefined;
+  /** Timestamp when the key was added */
+  addedAt: string;
+}
+
+/**
+ * Token bucket state for rate limiting
+ */
+export interface TokenBucketState {
+  /** Current available tokens */
+  tokens: number;
+  /** Maximum bucket capacity (= RPM limit) */
+  maxTokens: number;
+  /** Timestamp of last refill calculation */
+  lastRefill: number;
+}
+
+/**
+ * Daily usage tracking (resets at midnight PT)
+ */
+export interface DailyUsage {
+  /** Number of requests made today */
+  count: number;
+  /** Unix timestamp when the count resets (next midnight PT) */
+  resetAt: number;
+}
+
+/**
+ * Status of a single API key for UI display
+ * (Re-exported from services/rateLimiter for convenience)
+ */
+export interface KeyStatusInfo {
+  keyId: string;
+  label?: string | undefined;
+  tier: ApiTier;
+  availableTokens: number;
+  maxTokens: number;
+  dailyUsed: number;
+  dailyLimit: number | null;
+  isAvailable: boolean;
+  isExhausted: boolean;
+}
+
+/**
+ * Extended processing progress with rate limit info
+ */
+export interface ProcessingProgressExtended extends ProcessingProgress {
+  /** Status of all API keys */
+  keyStatuses: KeyStatusInfo[];
+  /** Currently waiting for a key to become available */
+  isWaitingForKey: boolean;
+  /** Estimated wait time in milliseconds */
+  waitTimeMs: number;
 }

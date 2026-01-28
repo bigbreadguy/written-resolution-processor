@@ -21,11 +21,47 @@ export const RETRY_CONFIG = {
 };
 
 export const STORAGE_KEYS = {
-  API_KEY: "gemini_api_key",
+  API_KEYS: "gemini_api_keys",
+  API_KEY_LEGACY: "gemini_api_key",  // For migration
   AI_ACKNOWLEDGED: "ai_disclosure_acknowledged",
+  BUCKET_PREFIX: "rate_bucket_",
+  DAILY_PREFIX: "rate_daily_",
 } as const;
 
 export const MEDIA_RESOLUTION = "medium" as const; // 560 tokens per image
+
+/**
+ * Rate limits per tier for Gemini 2.5 Flash
+ * Source: https://ai.google.dev/gemini-api/docs/rate-limits
+ *
+ * RPM = Requests Per Minute
+ * TPM = Tokens Per Minute
+ * RPD = Requests Per Day (null = unlimited)
+ *
+ * Note: RPD resets at midnight Pacific Time (PT)
+ */
+import type { ApiTier, TierLimits } from "@/types";
+
+export const TIER_LIMITS: Record<ApiTier, TierLimits> = {
+  free: { rpm: 15, tpm: 250_000, rpd: 250 },
+  tier1: { rpm: 1_000, tpm: 4_000_000, rpd: 10_000 },
+  tier2: { rpm: 2_000, tpm: 4_000_000, rpd: null },
+} as const;
+
+export const TIER_LABELS: Record<ApiTier, { ko: string; en: string }> = {
+  free: { ko: "무료", en: "Free" },
+  tier1: { ko: "Tier 1 (유료)", en: "Tier 1 (Paid)" },
+  tier2: { ko: "Tier 2 (기업)", en: "Tier 2 (Enterprise)" },
+} as const;
+
+export const RATE_LIMIT_CONFIG = {
+  /** Maximum time to wait for quota (5 minutes) */
+  maxWaitTimeMs: 5 * 60 * 1000,
+  /** Maximum retries per image before marking as failed */
+  maxRetriesPerImage: 3,
+  /** Interval to check for available quota while waiting */
+  waitCheckIntervalMs: 5_000,
+} as const;
 
 export const AI_DISCLOSURE_TEXT = {
   ko: {

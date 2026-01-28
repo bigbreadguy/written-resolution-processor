@@ -35,7 +35,7 @@ async function validateApiKey(key: string): Promise<boolean> {
 export function useApiKey(): UseApiKeyReturn {
   const [apiKey, setApiKeyState] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEYS.API_KEY);
+      return localStorage.getItem(STORAGE_KEYS.API_KEY_LEGACY);
     } catch {
       return null;
     }
@@ -46,7 +46,7 @@ export function useApiKey(): UseApiKeyReturn {
   // Sync with localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.API_KEY);
+      const stored = localStorage.getItem(STORAGE_KEYS.API_KEY_LEGACY);
       if (stored !== apiKey) {
         setApiKeyState(stored);
       }
@@ -80,7 +80,7 @@ export function useApiKey(): UseApiKeyReturn {
       }
 
       try {
-        localStorage.setItem(STORAGE_KEYS.API_KEY, trimmedKey);
+        localStorage.setItem(STORAGE_KEYS.API_KEY_LEGACY, trimmedKey);
       } catch {
         setError("API 키를 저장할 수 없습니다. 브라우저 설정을 확인하세요.");
         return false;
@@ -95,7 +95,7 @@ export function useApiKey(): UseApiKeyReturn {
 
   const clearApiKey = useCallback(() => {
     try {
-      localStorage.removeItem(STORAGE_KEYS.API_KEY);
+      localStorage.removeItem(STORAGE_KEYS.API_KEY_LEGACY);
     } catch {
       // Ignore localStorage errors
     }

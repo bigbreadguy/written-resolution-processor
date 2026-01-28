@@ -1,13 +1,14 @@
-import { type ReactNode, useCallback, useReducer, useRef } from "react";
+import { type ReactNode, useCallback, useReducer, useRef, useState } from "react";
 import {
   AiDisclosure,
   ApiKeySetup,
+  ApiKeyManager,
   FileUpload,
   ProcessingView,
   ReviewTable,
   DetailModal,
 } from "@/components/features";
-import { useApiKey, useAiAcknowledgment } from "@/hooks";
+import { useApiKeys, useAiAcknowledgment } from "@/hooks";
 import { processFiles } from "@/services";
 import { blobToBase64, getBase64Data, getMimeTypeFromBase64 } from "@/utils";
 import type {
@@ -15,13 +16,13 @@ import type {
   AppAction,
   ProcessableFile,
   ExtractedResolution,
-  ProcessingProgress,
+  ProcessingProgressExtended,
 } from "@/types";
 import styles from "./App.module.css";
 
 const initialState: AppState = {
   step: "landing",
-  apiKey: null,
+  apiKeys: [],
   hasAcknowledgedAI: false,
   files: [],
   processingProgress: null,
@@ -35,18 +36,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         hasAcknowledgedAI: true,
-        step: state.apiKey ? "upload" : "api-key-setup",
+        step: state.apiKeys.length > 0 ? "upload" : "api-key-setup",
       };
-    case "SET_API_KEY":
+    case "SET_API_KEYS":
       return {
         ...state,
-        apiKey: action.payload,
-        step: "upload",
+        apiKeys: action.payload,
+        step: action.payload.length > 0 ? "upload" : "api-key-setup",
       };
-    case "CLEAR_API_KEY":
+    case "CLEAR_API_KEYS":
       return {
         ...state,
-        apiKey: null,
+        apiKeys: [],
         step: "api-key-setup",
       };
     case "GO_TO_STEP":
@@ -80,6 +81,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
           currentBatch: 0,
           totalBatches: 0,
           statuses: new Map(),
+          keyStatuses: [],
+          isWaitingForKey: false,
+          waitTimeMs: 0,
         },
       };
     case "UPDATE_PROGRESS":
@@ -118,7 +122,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...initialState,
         hasAcknowledgedAI: state.hasAcknowledgedAI,
-        apiKey: state.apiKey,
+        apiKeys: state.apiKeys,
         step: "upload",
       };
     default:
@@ -128,18 +132,26 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 export function App(): ReactNode {
   const [state, dispatch] = useReducer(appReducer, initialState);
-  const { apiKey, isValidating, error, setApiKey } = useApiKey();
+  const {
+    apiKeys,
+    isValidating,
+    error,
+    addApiKey,
+    removeApiKey,
+    updateApiKey,
+  } = useApiKeys();
   const { hasAcknowledged, acknowledge } = useAiAcknowledgment();
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [isKeyManagerOpen, setIsKeyManagerOpen] = useState(false);
 
   // Sync external state with reducer
   const effectiveState: AppState = {
     ...state,
-    apiKey,
+    apiKeys,
     hasAcknowledgedAI: hasAcknowledged,
     step: !hasAcknowledged
       ? "landing"
-      : !apiKey
+      : apiKeys.length === 0
         ? "api-key-setup"
         : state.step === "landing" || state.step === "api-key-setup"
           ? "upload"
@@ -151,16 +163,17 @@ export function App(): ReactNode {
     dispatch({ type: "ACKNOWLEDGE_AI" });
   }, [acknowledge]);
 
-  const handleApiKeySubmit = useCallback(
-    async (key: string): Promise<boolean> => {
-      const success = await setApiKey(key);
-      if (success) {
-        dispatch({ type: "SET_API_KEY", payload: key });
-      }
+  const handleAddApiKey = useCallback(
+    async (key: string, tier: import("@/types").ApiTier, label?: string): Promise<boolean> => {
+      const success = await addApiKey(key, tier, label);
       return success;
     },
-    [setApiKey]
+    [addApiKey]
   );
+
+  const handleContinueFromSetup = useCallback(() => {
+    dispatch({ type: "SET_API_KEYS", payload: apiKeys });
+  }, [apiKeys]);
 
   const handleFilesChange = useCallback((files: ProcessableFile[]) => {
     dispatch({ type: "CLEAR_FILES" });
@@ -168,7 +181,7 @@ export function App(): ReactNode {
   }, []);
 
   const handleStartProcessing = useCallback(async () => {
-    if (!effectiveState.apiKey) return;
+    if (effectiveState.apiKeys.length === 0) return;
 
     const readyFiles = effectiveState.files.filter((f) => f.status === "ready");
     if (readyFiles.length === 0) return;
@@ -197,9 +210,9 @@ export function App(): ReactNode {
       const flatImages = images.flat();
 
       const results = await processFiles({
-        apiKey: effectiveState.apiKey,
+        apiKeys: effectiveState.apiKeys,
         images: flatImages,
-        onProgress: (progress: ProcessingProgress) => {
+        onProgress: (progress: ProcessingProgressExtended) => {
           dispatch({ type: "UPDATE_PROGRESS", payload: progress });
         },
         signal: abortControllerRef.current.signal,
@@ -219,7 +232,7 @@ export function App(): ReactNode {
     } finally {
       abortControllerRef.current = null;
     }
-  }, [effectiveState.apiKey, effectiveState.files]);
+  }, [effectiveState.apiKeys, effectiveState.files]);
 
   const handleCancelProcessing = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -259,7 +272,9 @@ export function App(): ReactNode {
 
       {effectiveState.step === "api-key-setup" && (
         <ApiKeySetup
-          onSubmit={handleApiKeySubmit}
+          apiKeys={effectiveState.apiKeys}
+          onAddKey={handleAddApiKey}
+          onContinue={handleContinueFromSetup}
           isValidating={isValidating}
           error={error}
         />
@@ -297,6 +312,17 @@ export function App(): ReactNode {
           onUpdate={handleUpdateResult}
         />
       )}
+
+      <ApiKeyManager
+        apiKeys={effectiveState.apiKeys}
+        isOpen={isKeyManagerOpen}
+        onClose={() => { setIsKeyManagerOpen(false); }}
+        onAddKey={handleAddApiKey}
+        onRemoveKey={removeApiKey}
+        onUpdateKey={updateApiKey}
+        isValidating={isValidating}
+        error={error}
+      />
     </div>
   );
 }
