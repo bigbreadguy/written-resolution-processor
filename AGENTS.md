@@ -13,6 +13,50 @@ Written Resolution Processor helps users who needs to process captured images, p
 
 ---
 
+## Korean AI Regulation Compliance
+
+This application must comply with **인공지능 발전과 신뢰 기반 조성 등에 관한 법률** (AI Basic Act, effective January 2026).
+
+### Mandatory Requirements
+
+| Requirement | Implementation | Priority |
+|-------------|----------------|----------|
+| **AI Disclosure** | Prominent notice that Google Gemini AI is used | CRITICAL |
+| **User Consent** | Explicit acknowledgment before AI processing | CRITICAL |
+| **Human Oversight** | Mandatory review interface before export | CRITICAL |
+| **Transparency** | Clear explanation of AI limitations | HIGH |
+
+### Implementation Checklist
+
+When developing AI-related features, ensure:
+
+- [ ] AI usage notice is visible on landing page
+- [ ] User must acknowledge AI disclosure before first use
+- [ ] All AI-extracted data can be reviewed and edited by user
+- [ ] Uncertain extractions are flagged for human review
+- [ ] Export requires user confirmation after review
+- [ ] No AI decision is final without human approval
+
+### UI Text Requirements
+
+Always include bilingual (Korean/English) notices:
+
+```
+⚠️ AI 활용 고지 (AI Usage Notice)
+
+본 서비스는 Google Gemini AI를 활용합니다.
+This service uses Google Gemini AI.
+
+• AI가 추출한 정보는 반드시 사용자가 검토해야 합니다
+• 최종 결과의 정확성에 대한 책임은 사용자에게 있습니다
+```
+
+### Reference
+
+See [docs/SPEC.md](./docs/SPEC.md) Section 8 (AI Compliance) for full details.
+
+---
+
 ## Package Manager
 - Use pnpm (not npm or yarn)
 - Enable via `corepack enable pnpm` if not installed
