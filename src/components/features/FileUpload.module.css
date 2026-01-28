@@ -1,0 +1,188 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.titleEn {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.description {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.descriptionEn {
+  display: block;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.dropZoneContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropZoneIcon {
+  font-size: 48px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.dropZoneText {
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.dropZoneSubtext {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.error {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #fef2f2;
+  border-radius: var(--radius);
+  color: var(--color-error);
+  font-size: 14px;
+}
+
+.fileList {
+  margin-top: 24px;
+}
+
+.fileListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.fileCount {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.fileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.fileCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.fileCardError {
+  border-color: var(--color-error);
+  background-color: #fef2f2;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.thumbnailPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 24px;
+  color: var(--color-text-secondary);
+}
+
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileName {
+  font-size: 12px;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pageIndicator {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.fileError {
+  font-size: 11px;
+  color: var(--color-error);
+}
+
+.removeButton {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.removeButton:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.removeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
