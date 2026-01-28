@@ -18,7 +18,7 @@ Implement core MVP features: API key management, multi-file upload, Gemini proce
 
 | Decision | Choice | Confidence |
 |----------|--------|------------|
-| Gemini Model | `gemini-3-flash-preview` | 92% |
+| Gemini Model | `gemini-2.5-flash` | 92% |
 | Media Resolution | `medium` (560 tokens/image) | 90% |
 | Batch Size | 10 images per request | 90% |
 | PDF Library | `pdfjs-dist` with `?url` worker import | 88% |
