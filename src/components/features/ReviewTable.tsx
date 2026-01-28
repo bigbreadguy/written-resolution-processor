@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui";
-import { exportToXlsx, generateExportSummary } from "@/services";
+import { exportToXlsx, generateExportSummary, inspectResults } from "@/services";
 import type { ExtractedResolution } from "@/types";
 import styles from "./ReviewTable.module.css";
 
@@ -21,6 +21,9 @@ export function ReviewTable({
 
   const summary = useMemo(() => generateExportSummary(results), [results]);
 
+  // Run inspection on results
+  const inspectionReport = useMemo(() => inspectResults(results), [results]);
+
   const filteredResults = useMemo(() => {
     switch (filter) {
       case "needs-review":
@@ -33,8 +36,8 @@ export function ReviewTable({
   }, [results, filter]);
 
   const handleExport = useCallback(() => {
-    exportToXlsx({ results });
-  }, [results]);
+    exportToXlsx({ results, inspectionReport });
+  }, [results, inspectionReport]);
 
   const getConfidenceClass = (confidence: string): string => {
     switch (confidence) {
@@ -87,6 +90,36 @@ export function ReviewTable({
           <span className={styles.statLabel}>낮음</span>
         </div>
       </div>
+
+      {/* Inspection summary */}
+      {inspectionReport.findings.length > 0 && (
+        <div className={styles.inspectionSummary}>
+          <div className={styles.inspectionHeader}>
+            <span className={styles.inspectionIcon}>🔍</span>
+            <span className={styles.inspectionTitle}>검증 결과</span>
+            <span className={styles.inspectionCount}>
+              {inspectionReport.summary.errorCount > 0 && (
+                <span className={styles.errorCount}>오류 {inspectionReport.summary.errorCount}</span>
+              )}
+              {inspectionReport.summary.warningCount > 0 && (
+                <span className={styles.warningCount}>경고 {inspectionReport.summary.warningCount}</span>
+              )}
+            </span>
+          </div>
+          <ul className={styles.inspectionList}>
+            {inspectionReport.findings.slice(0, 5).map((finding, idx) => (
+              <li key={idx} className={styles[`finding${finding.severity.charAt(0).toUpperCase() + finding.severity.slice(1)}`] ?? ""}>
+                {finding.message}
+              </li>
+            ))}
+            {inspectionReport.findings.length > 5 && (
+              <li className={styles.findingMore}>
+                외 {inspectionReport.findings.length - 5}건 (XLSX에서 전체 확인)
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
 
       <div className={styles.filters}>
         <button
