@@ -173,41 +173,56 @@ export function FileUpload({
           </div>
 
           <div className={styles.fileGrid}>
-            {files.map((file) => (
-              <div
-                key={file.id}
-                className={`${styles.fileCard} ${file.status === "error" ? styles.fileCardError : ""}`}
-              >
-                {file.thumbnail ? (
-                  <img
-                    src={file.thumbnail}
-                    alt={file.originalFile.name}
-                    className={styles.thumbnail}
-                  />
-                ) : (
-                  <div className={styles.thumbnailPlaceholder}>
-                    {file.status === "error" ? "!" : "?"}
-                  </div>
-                )}
-                <div className={styles.fileInfo}>
-                  <span className={styles.fileName} title={file.originalFile.name}>
-                    {file.originalFile.name}
-                  </span>
-                  {file.errorMessage ? (
-                    <span className={styles.fileError}>{file.errorMessage}</span>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  className={styles.removeButton}
-                  onClick={() => handleRemoveFile(file.id)}
-                  disabled={isProcessing}
-                  aria-label={`${file.originalFile.name} 삭제`}
+            {files.map((file, index) => {
+              // Calculate page number for multi-page PDFs
+              const pageNumber =
+                file.pageCount > 1
+                  ? files
+                      .slice(0, index + 1)
+                      .filter((f) => f.originalFile === file.originalFile).length
+                  : null;
+
+              return (
+                <div
+                  key={file.id}
+                  className={`${styles.fileCard} ${file.status === "error" ? styles.fileCardError : ""}`}
                 >
-                  &times;
-                </button>
-              </div>
-            ))}
+                  {file.thumbnail ? (
+                    <img
+                      src={file.thumbnail}
+                      alt={file.originalFile.name}
+                      className={styles.thumbnail}
+                    />
+                  ) : (
+                    <div className={styles.thumbnailPlaceholder}>
+                      {file.status === "error" ? "!" : "?"}
+                    </div>
+                  )}
+                  <div className={styles.fileInfo}>
+                    <span className={styles.fileName} title={file.originalFile.name}>
+                      {file.originalFile.name}
+                      {pageNumber !== null ? (
+                        <span className={styles.pageIndicator}>
+                          {" "}({pageNumber}/{file.pageCount})
+                        </span>
+                      ) : null}
+                    </span>
+                    {file.errorMessage ? (
+                      <span className={styles.fileError}>{file.errorMessage}</span>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.removeButton}
+                    onClick={() => { handleRemoveFile(file.id); }}
+                    disabled={isProcessing}
+                    aria-label={`${file.originalFile.name} 삭제`}
+                  >
+                    &times;
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : null}

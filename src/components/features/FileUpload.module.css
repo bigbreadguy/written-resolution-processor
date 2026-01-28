@@ -142,6 +142,11 @@
   text-overflow: ellipsis;
 }
 
+.pageIndicator {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
 .fileError {
   font-size: 11px;
   color: var(--color-error);
