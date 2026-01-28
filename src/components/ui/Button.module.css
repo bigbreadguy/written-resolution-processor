@@ -1,87 +1,150 @@
+/* ============================================
+   BUTTON - Primary CTA Component
+   Refined with subtle depth and polish
+   ============================================ */
+
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   border: none;
   border-radius: var(--radius);
+  font-family: var(--font-mono);
   font-weight: 500;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
   position: relative;
+  transition:
+    background-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-base);
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Variants */
+/* === Variants === */
+
 .primary {
-  background-color: var(--color-primary);
-  color: white;
+  background: linear-gradient(
+    180deg,
+    oklch(0.78 0.15 75) 0%,
+    oklch(0.72 0.15 75) 100%
+  );
+  color: var(--color-text-inverse);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.2),
+    0 2px 4px oklch(0 0 0 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.1);
 }
 
 .primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
+  background: linear-gradient(
+    180deg,
+    oklch(0.80 0.17 75) 0%,
+    oklch(0.74 0.17 75) 100%
+  );
+  box-shadow:
+    0 2px 4px oklch(0 0 0 / 0.25),
+    0 4px 8px oklch(0 0 0 / 0.15),
+    0 0 20px var(--color-primary-glow),
+    inset 0 1px 0 oklch(1 0 0 / 0.15);
+}
+
+.primary:active:not(:disabled) {
+  background: linear-gradient(
+    180deg,
+    oklch(0.70 0.15 75) 0%,
+    oklch(0.68 0.15 75) 100%
+  );
 }
 
 .secondary {
-  background-color: transparent;
+  background: var(--color-bg-elevated);
   color: var(--color-text);
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .secondary:hover:not(:disabled) {
-  background-color: var(--color-bg-secondary);
+  background: var(--color-bg-hover);
+  border-color: var(--color-text-tertiary);
+}
+
+.secondary:active:not(:disabled) {
+  background: var(--color-bg);
 }
 
 .danger {
-  background-color: var(--color-error);
+  background: linear-gradient(
+    180deg,
+    oklch(0.58 0.18 25) 0%,
+    oklch(0.52 0.18 25) 100%
+  );
   color: white;
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.2),
+    0 2px 4px oklch(0 0 0 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.1);
 }
 
 .danger:hover:not(:disabled) {
-  background-color: #b91c1c;
+  background: linear-gradient(
+    180deg,
+    oklch(0.62 0.20 25) 0%,
+    oklch(0.55 0.20 25) 100%
+  );
+  box-shadow:
+    0 2px 4px oklch(0 0 0 / 0.25),
+    0 4px 8px oklch(0 0 0 / 0.15),
+    0 0 16px oklch(0.65 0.2 25 / 0.3);
 }
 
-/* Sizes */
+/* === Sizes === */
+
 .sm {
-  padding: 6px 12px;
-  font-size: 14px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
 }
 
 .md {
-  padding: 10px 20px;
-  font-size: 16px;
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
 }
 
 .lg {
-  padding: 14px 28px;
-  font-size: 18px;
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--text-base);
 }
 
-/* Loading state */
+/* === Loading State === */
+
 .loading {
   position: relative;
+  pointer-events: none;
 }
 
 .spinner {
+  position: absolute;
   width: 16px;
   height: 16px;
   border: 2px solid transparent;
   border-top-color: currentColor;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  position: absolute;
+  animation: spin 0.7s linear infinite;
 }
 
 .hiddenText {
   visibility: hidden;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }

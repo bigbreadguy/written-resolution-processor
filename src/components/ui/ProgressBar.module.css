@@ -1,49 +1,82 @@
+/* ============================================
+   PROGRESS BAR - Linear Progress Indicator
+   Sophisticated with glow effect
+   ============================================ */
+
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   width: 100%;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
 }
 
 .label {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--color-text);
 }
 
 .percentage {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
 }
 
 .track {
+  position: relative;
   width: 100%;
-  background-color: var(--color-border);
-  border-radius: 9999px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .sm {
-  height: 4px;
+  height: 6px;
 }
 
 .md {
-  height: 8px;
+  height: 10px;
 }
 
 .lg {
-  height: 12px;
+  height: 14px;
 }
 
 .fill {
   height: 100%;
-  background-color: var(--color-primary);
-  border-radius: 9999px;
-  transition: width 0.3s ease-out;
+  background: linear-gradient(
+    90deg,
+    oklch(0.72 0.15 75) 0%,
+    oklch(0.78 0.15 75) 50%,
+    oklch(0.72 0.15 75) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: shimmer 2s linear infinite;
+  box-shadow:
+    0 0 8px var(--color-primary-glow),
+    inset 0 1px 0 oklch(1 0 0 / 0.2);
+}
+
+/* Pulsing effect when in progress */
+.fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
 }
