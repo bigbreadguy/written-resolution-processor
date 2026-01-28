@@ -187,6 +187,34 @@ export function inspectResults(results: ExtractedResolution[]): InspectionReport
     });
   }
 
+  // 7. Check for unclear/illegible fields marked as [불명]
+  const UNCLEAR_MARKER = "[불명]";
+  results.forEach((result, index) => {
+    const fieldsToCheck = [
+      result.document_title,
+      result.property_number,
+      result.individual.name,
+      result.individual.birth_string,
+      result.individual.residential_address,
+      result.individual.contact_number,
+      ...result.votes.flatMap((v) => v.voted),
+    ];
+
+    const hasUnclearFields = fieldsToCheck.some((field) =>
+      field.includes(UNCLEAR_MARKER)
+    );
+
+    if (hasUnclearFields) {
+      findings.push({
+        severity: "warning",
+        category: "quality",
+        message: `판독 불가 항목 발견: ${result.property_number}`,
+        affectedItems: [result.property_number],
+      });
+      documentNotes.get(index)?.push("판독 불가 항목");
+    }
+  });
+
   // Calculate summary
   const documentsWithIssues = new Set<number>();
   for (const [index, notes] of documentNotes) {
