@@ -1,4 +1,4 @@
-export const GEMINI_MODEL = "gemini-2.5-flash-preview-05-20";
+export const GEMINI_MODEL = "gemini-2.5-flash";
 
 export const BATCH_SIZE = 10;
 
