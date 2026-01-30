@@ -9,7 +9,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: var(--color-bg-secondary);
+  background: var(--gradient-warm);
   border-radius: var(--radius);
   flex-wrap: wrap;
   gap: 12px;
@@ -23,29 +23,30 @@
 .confidenceBadge {
   padding: 4px 12px;
   font-size: 13px;
-  font-weight: 500;
-  border-radius: 4px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
 }
 
 .confidenceHigh {
-  background-color: #dcfce7;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
   color: #166534;
 }
 
 .confidenceMedium {
-  background-color: #fef3c7;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
   color: #92400e;
 }
 
 .confidenceLow {
-  background-color: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
   color: #991b1b;
 }
 
 .notes {
   padding: 12px 16px;
-  background-color: #fef3c7;
-  border-radius: var(--radius);
+  background: var(--gradient-warm);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   color: #92400e;
 }
@@ -74,6 +75,19 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text);
+  padding-left: 14px;
+  position: relative;
+}
+
+.sectionTitle::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  background: var(--gradient-primary);
+  border-radius: 2px;
 }
 
 .fieldGrid {
@@ -132,17 +146,20 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background-color: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition:
+    border-color var(--duration-fast),
+    background-color var(--duration-fast);
 }
 
 .voteOption:hover {
   border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
 }
 
 .voteOption input[type="checkbox"] {
