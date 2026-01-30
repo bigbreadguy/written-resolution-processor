@@ -30,8 +30,8 @@ export interface Individual {
  * Metadata added by the system during extraction
  */
 export interface ExtractionMetadata {
-  /** Overall confidence level for this extraction */
-  confidence: "high" | "medium" | "low";
+  /** Overall confidence score for this extraction (0-100) */
+  confidence: number;
   /** Whether this item should be flagged for human review */
   requires_review: boolean;
   /** Specific notes about extraction issues */
@@ -74,7 +74,7 @@ export interface GeminiExtractionResponse {
   individual: Partial<Individual> & { name: string };
   votes: VoteItem[];
   _meta: {
-    confidence: "high" | "medium" | "low";
+    confidence: number;
     requires_review: boolean;
     extraction_notes: string[];
   };

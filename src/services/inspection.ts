@@ -6,6 +6,7 @@
  */
 
 import type { ExtractedResolution } from "@/types";
+import { isLowConfidence } from "@/utils";
 
 /**
  * Single inspection finding
@@ -149,14 +150,14 @@ export function inspectResults(results: ExtractedResolution[]): InspectionReport
 
   // 4. Check for low confidence items
   results.forEach((result, index) => {
-    if (result._meta.confidence === "low") {
+    if (isLowConfidence(result._meta.confidence)) {
       findings.push({
         severity: "warning",
         category: "quality",
-        message: `낮은 신뢰도: ${result.property_number}`,
+        message: `낮은 신뢰도 (${result._meta.confidence}점): ${result.property_number}`,
         affectedItems: [result.property_number],
       });
-      documentNotes.get(index)?.push("낮은 신뢰도");
+      documentNotes.get(index)?.push(`낮은 신뢰도 (${result._meta.confidence}점)`);
     }
   });
 

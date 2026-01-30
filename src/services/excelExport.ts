@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import type { ExtractedResolution } from "@/types";
+import { getConfidenceTag, getConfidenceTagKorean } from "@/utils";
 import type { InspectionReport } from "./inspection";
 
 interface VoteTally {
@@ -96,7 +97,7 @@ function generateDetailData(
       "생년월일": result.individual.birth_string,
       "주소": result.individual.residential_address,
       "연락처": result.individual.contact_number,
-      "신뢰도": result._meta.confidence,
+      "신뢰도": `${result._meta.confidence} (${getConfidenceTagKorean(getConfidenceTag(result._meta.confidence))})`,
       "검토필요": result._meta.requires_review ? "예" : "아니오",
       "비고": allNotes.join("; "),
     };
@@ -251,8 +252,8 @@ export function generateExportSummary(results: ExtractedResolution[]): {
   return {
     total: results.length,
     needsReview: results.filter((r) => r._meta.requires_review).length,
-    highConfidence: results.filter((r) => r._meta.confidence === "high").length,
-    mediumConfidence: results.filter((r) => r._meta.confidence === "medium").length,
-    lowConfidence: results.filter((r) => r._meta.confidence === "low").length,
+    highConfidence: results.filter((r) => getConfidenceTag(r._meta.confidence) === "HIGH").length,
+    mediumConfidence: results.filter((r) => getConfidenceTag(r._meta.confidence) === "MEDIUM").length,
+    lowConfidence: results.filter((r) => getConfidenceTag(r._meta.confidence) === "LOW").length,
   };
 }

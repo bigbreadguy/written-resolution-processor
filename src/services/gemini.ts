@@ -28,13 +28,16 @@ IMPORTANT GUIDELINES:
    - Dates may appear as "2026년 1월 28일" or "2026-01-28"
    - Phone numbers should be normalized to "010-XXXX-XXXX" format
 
-2. CONFIDENCE RATING
-   - HIGH: All text clearly visible and printed
-   - MEDIUM: Some text handwritten or slightly unclear
-   - LOW: Text blurry, partially obscured, or inconsistent
+2. CONFIDENCE RATING (0-100 integer scale)
+   - 90-100: All text clearly visible and printed, no ambiguity
+   - 70-89: Most text clear, minor handwriting or slight blur
+   - 50-69: Some text handwritten or moderately unclear
+   - 30-49: Significant portions blurry or hard to read
+   - 0-29: Text largely illegible or severely obscured
+   - Use the full range — avoid clustering around round numbers
 
 3. REVIEW FLAGS
-   - Set requires_review=true if confidence is not HIGH
+   - Set requires_review=true if confidence < 90
    - Add extraction_notes for specific issues (e.g., "blurry signature area", "handwritten name")
 
 4. VOTE RECOGNITION
@@ -73,7 +76,7 @@ const EXTRACTION_PROMPT = `이 서면결의서 이미지에서 다음 정보를 
    - options: 선택 가능한 옵션들 (보통 ["찬성", "반대", "기권"])
    - voted: 실제 선택된 옵션 (표시 없으면 ["기표안함"])
 5. _meta:
-   - confidence: 전체적인 추출 신뢰도 (high/medium/low)
+   - confidence: 전체적인 추출 신뢰도 (0-100 정수, 높을수록 신뢰도 높음)
    - requires_review: 사람이 검토해야 하는지 여부
    - extraction_notes: 추출 과정에서 발견된 문제점들 (예: "제2안건 복수 표시", "서명란 불명확")
 
@@ -117,7 +120,7 @@ const responseSchema = {
     _meta: {
       type: SchemaType.OBJECT,
       properties: {
-        confidence: { type: SchemaType.STRING, enum: ["high", "medium", "low"] },
+        confidence: { type: SchemaType.INTEGER },
         requires_review: { type: SchemaType.BOOLEAN },
         extraction_notes: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
       },
@@ -182,6 +185,9 @@ async function processImage(
     { signal }
   );
 
+  // Clamp confidence score to 0-100 range
+  const confidenceScore = Math.round(Math.max(0, Math.min(100, result._meta.confidence)));
+
   // Transform to ExtractedResolution with full metadata
   const extracted: ExtractedResolution = {
     document_title: result.document_title,
@@ -195,7 +201,7 @@ async function processImage(
     },
     votes: result.votes,
     _meta: {
-      confidence: result._meta.confidence,
+      confidence: confidenceScore,
       requires_review: result._meta.requires_review,
       extraction_notes: result._meta.extraction_notes,
       source_file: image.sourceFile,
