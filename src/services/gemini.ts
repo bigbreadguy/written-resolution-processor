@@ -318,6 +318,23 @@ export interface ProcessFilesOptions {
   signal?: AbortSignal | undefined;
 }
 
+interface ProcessingContext {
+  readonly images: readonly ImageInput[];
+  readonly results: ExtractedResolution[];
+  readonly statuses: Map<string, FileProcessingStatus>;
+  readonly processedIds: Set<string>;
+  readonly rateLimiter: RateLimiter;
+  readonly modelCache: Map<string, ReturnType<GoogleGenerativeAI["getGenerativeModel"]>>;
+  readonly onProgress: (progress: ProcessingProgressExtended) => void;
+  readonly signal: AbortSignal | undefined;
+}
+
+interface BatchInfo {
+  readonly batchIndex: number;
+  readonly totalBatches: number;
+  readonly currentBatchSize: number;
+}
+
 function createDynamicBatches(images: readonly ImageInput[]): ImageInput[][] {
   const batches: ImageInput[][] = [];
   let currentBatch: ImageInput[] = [];
@@ -421,11 +438,16 @@ function buildBatchContentParts(
   return parts;
 }
 
+interface BatchResultItem {
+  readonly result: ExtractedResolution;
+  readonly sourceIndex: number;
+}
+
 async function processBatch(
   model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]>,
   images: readonly ImageInput[],
   signal?: AbortSignal
-): Promise<ExtractedResolution[]> {
+): Promise<BatchResultItem[]> {
   const result = await withRetry(
     async () => {
       if (signal?.aborted) {
@@ -440,6 +462,13 @@ async function processBatch(
     { signal }
   );
 
+  // Validate document count matches input
+  if (result.documents.length !== images.length) {
+    throw new Error(
+      `Batch response mismatch: expected ${images.length} documents but received ${result.documents.length}`
+    );
+  }
+
   // Validate source_index coverage
   const expectedIndices = new Set(images.map((_, i) => i));
   const receivedIndices = new Set(result.documents.map((d) => d.source_index));
@@ -450,8 +479,8 @@ async function processBatch(
     }
   }
 
-  // Map each batch item to ExtractedResolution
-  const extracted: ExtractedResolution[] = result.documents.map((doc) => {
+  // Map each batch item to BatchResultItem
+  const extracted: BatchResultItem[] = result.documents.map((doc) => {
     const image = images[doc.source_index];
     if (!image) {
       throw new Error(`Invalid source_index ${doc.source_index}`);
@@ -460,24 +489,27 @@ async function processBatch(
     const confidenceScore = Math.round(Math.max(0, Math.min(100, doc._meta.confidence)));
 
     return {
-      document_title: doc.document_title,
-      property_number: doc.property_number,
-      individual: {
-        name: doc.individual.name,
-        is_lessee: doc.individual.is_lessee ?? false,
-        birth_string: doc.individual.birth_string ?? "",
-        residential_address: doc.individual.residential_address ?? "",
-        contact_number: doc.individual.contact_number ?? "",
+      result: {
+        document_title: doc.document_title,
+        property_number: doc.property_number,
+        individual: {
+          name: doc.individual.name,
+          is_lessee: doc.individual.is_lessee ?? false,
+          birth_string: doc.individual.birth_string ?? "",
+          residential_address: doc.individual.residential_address ?? "",
+          contact_number: doc.individual.contact_number ?? "",
+        },
+        votes: doc.votes,
+        _meta: {
+          confidence: confidenceScore,
+          requires_review: doc._meta.requires_review,
+          extraction_notes: doc._meta.extraction_notes,
+          source_file: image.sourceFile,
+          page_count: image.pageCount,
+          processed_at: new Date().toISOString(),
+        },
       },
-      votes: doc.votes,
-      _meta: {
-        confidence: confidenceScore,
-        requires_review: doc._meta.requires_review,
-        extraction_notes: doc._meta.extraction_notes,
-        source_file: image.sourceFile,
-        page_count: image.pageCount,
-        processed_at: new Date().toISOString(),
-      },
+      sourceIndex: doc.source_index,
     };
   });
 
@@ -502,27 +534,22 @@ function isRateLimitError(error: unknown): boolean {
 }
 
 function createProgress(
-  images: ImageInput[],
-  results: ExtractedResolution[],
-  statuses: Map<string, FileProcessingStatus>,
-  batchIndex: number,
-  totalBatches: number,
-  currentBatchSize: number,
-  rateLimiter: RateLimiter,
+  ctx: ProcessingContext,
+  batch: BatchInfo,
   isWaiting: boolean,
   waitTimeMs: number
 ): ProcessingProgressExtended {
   return {
-    total: images.length,
-    completed: results.length,
-    failed: Array.from(statuses.values()).filter((s) => s.state === "error").length,
-    currentBatch: batchIndex + 1,
-    totalBatches,
-    statuses: new Map(statuses),
-    keyStatuses: rateLimiter.getKeyStatuses(),
+    total: ctx.images.length,
+    completed: ctx.results.length,
+    failed: Array.from(ctx.statuses.values()).filter((s) => s.state === "error").length,
+    currentBatch: batch.batchIndex + 1,
+    totalBatches: batch.totalBatches,
+    statuses: new Map(ctx.statuses),
+    keyStatuses: ctx.rateLimiter.getKeyStatuses(),
     isWaitingForKey: isWaiting,
     waitTimeMs,
-    currentBatchSize,
+    currentBatchSize: batch.currentBatchSize,
   };
 }
 
@@ -563,76 +590,67 @@ async function acquireKey(
  */
 async function processImageWithRateLimit(
   image: ImageInput,
-  images: ImageInput[],
-  results: ExtractedResolution[],
-  statuses: Map<string, FileProcessingStatus>,
-  processedIds: Set<string>,
-  batchIndex: number,
-  totalBatches: number,
-  currentBatchSize: number,
-  rateLimiter: RateLimiter,
-  singleModelCache: Map<string, ReturnType<GoogleGenerativeAI["getGenerativeModel"]>>,
-  onProgress: (progress: ProcessingProgressExtended) => void,
-  signal: AbortSignal | undefined
+  ctx: ProcessingContext,
+  batch: BatchInfo
 ): Promise<void> {
-  if (processedIds.has(image.id)) return;
+  if (ctx.processedIds.has(image.id)) return;
 
-  statuses.set(image.id, { state: "processing" });
-  onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, currentBatchSize, rateLimiter, false, 0));
+  ctx.statuses.set(image.id, { state: "processing" });
+  ctx.onProgress(createProgress(ctx, batch, false, 0));
 
   let retryCount = 0;
   let success = false;
 
   while (!success && retryCount < RATE_LIMIT_CONFIG.maxRetriesPerImage) {
-    if (signal?.aborted) {
+    if (ctx.signal?.aborted) {
       throw new DOMException("Aborted", "AbortError");
     }
 
-    const bestKey = await acquireKey(rateLimiter, signal, (waitTimeMs) => {
-      onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, currentBatchSize, rateLimiter, true, waitTimeMs));
+    const bestKey = await acquireKey(ctx.rateLimiter, ctx.signal, (waitTimeMs) => {
+      ctx.onProgress(createProgress(ctx, batch, true, waitTimeMs));
     });
 
     if (!bestKey) {
-      statuses.set(image.id, {
+      ctx.statuses.set(image.id, {
         state: "error",
         error: "All API keys exhausted. Please try again later or add more keys.",
       });
-      processedIds.add(image.id);
+      ctx.processedIds.add(image.id);
       return;
     }
 
     try {
-      rateLimiter.consumeRequest(bestKey.id);
-      const model = getSingleModel(singleModelCache, bestKey);
-      const result = await processImage(model, image, signal);
+      ctx.rateLimiter.consumeRequest(bestKey.id);
+      const model = getSingleModel(ctx.modelCache, bestKey);
+      const result = await processImage(model, image, ctx.signal);
 
-      results.push(result);
-      statuses.set(image.id, { state: "done", result });
-      processedIds.add(image.id);
+      ctx.results.push(result);
+      ctx.statuses.set(image.id, { state: "done", result });
+      ctx.processedIds.add(image.id);
       success = true;
     } catch (error) {
       if (isRateLimitError(error)) {
-        rateLimiter.markExhausted(bestKey.id);
+        ctx.rateLimiter.markExhausted(bestKey.id);
         retryCount++;
         continue;
       }
 
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      statuses.set(image.id, { state: "error", error: errorMessage });
-      processedIds.add(image.id);
+      ctx.statuses.set(image.id, { state: "error", error: errorMessage });
+      ctx.processedIds.add(image.id);
       break;
     }
   }
 
-  if (!success && statuses.get(image.id)?.state === "processing") {
-    statuses.set(image.id, {
+  if (!success && ctx.statuses.get(image.id)?.state === "processing") {
+    ctx.statuses.set(image.id, {
       state: "error",
       error: "Rate limit exceeded. Please try again later.",
     });
-    processedIds.add(image.id);
+    ctx.processedIds.add(image.id);
   }
 
-  onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, currentBatchSize, rateLimiter, false, 0));
+  ctx.onProgress(createProgress(ctx, batch, false, 0));
 }
 
 function getSingleModel(
@@ -691,47 +709,59 @@ export async function processFiles({
   }
 
   const batches = createDynamicBatches(images);
-  const totalBatches = batches.length;
 
   // Unified model cache for both single and batch models (keyed by "single_<id>" / "batch_<id>")
   const modelCache = new Map<string, ReturnType<GoogleGenerativeAI["getGenerativeModel"]>>();
+
+  const ctx: ProcessingContext = {
+    images,
+    results,
+    statuses,
+    processedIds,
+    rateLimiter,
+    modelCache,
+    onProgress,
+    signal,
+  };
 
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
     if (signal?.aborted) {
       throw new DOMException("Aborted", "AbortError");
     }
 
-    const batch = batches[batchIndex];
-    if (!batch) continue;
+    const batchDocs = batches[batchIndex];
+    if (!batchDocs) continue;
+
+    const batchInfo: BatchInfo = {
+      batchIndex,
+      totalBatches: batches.length,
+      currentBatchSize: batchDocs.length,
+    };
 
     // Mark all docs in this batch as processing
-    for (const image of batch) {
+    for (const image of batchDocs) {
       if (!processedIds.has(image.id)) {
         statuses.set(image.id, { state: "processing" });
       }
     }
-    onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, batch.length, rateLimiter, false, 0));
+    onProgress(createProgress(ctx, batchInfo, false, 0));
 
     // Single-doc batch: use existing single-doc path
-    if (batch.length === 1) {
-      const image = batch[0];
+    if (batchDocs.length === 1) {
+      const image = batchDocs[0];
       if (!image) continue;
-      await processImageWithRateLimit(
-        image, images, results, statuses, processedIds,
-        batchIndex, totalBatches, batch.length,
-        rateLimiter, modelCache, onProgress, signal
-      );
+      await processImageWithRateLimit(image, ctx, batchInfo);
       continue;
     }
 
     // Multi-doc batch: try batch processing
     const bestKey = await acquireKey(rateLimiter, signal, (waitTimeMs) => {
-      onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, batch.length, rateLimiter, true, waitTimeMs));
+      onProgress(createProgress(ctx, batchInfo, true, waitTimeMs));
     });
 
     if (!bestKey) {
       // No key available — fail all docs in this batch
-      for (const image of batch) {
+      for (const image of batchDocs) {
         if (!processedIds.has(image.id)) {
           statuses.set(image.id, {
             state: "error",
@@ -740,7 +770,7 @@ export async function processFiles({
           processedIds.add(image.id);
         }
       }
-      onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, batch.length, rateLimiter, false, 0));
+      onProgress(createProgress(ctx, batchInfo, false, 0));
       continue;
     }
 
@@ -749,32 +779,28 @@ export async function processFiles({
     try {
       rateLimiter.consumeRequest(bestKey.id);
       const batchModel = getBatchModel(modelCache, bestKey);
-      const batchResults = await processBatch(batchModel, batch, signal);
+      const batchResults = await processBatch(batchModel, batchDocs, signal);
 
       // Quality validation: check for low-confidence results that need individual re-processing
       const lowConfidenceIndices: number[] = [];
-      for (const result of batchResults) {
-        const matchingImage = batch.find((img) => img.sourceFile === result._meta.source_file);
+      for (const item of batchResults) {
+        const matchingImage = batchDocs[item.sourceIndex];
         if (!matchingImage) continue;
 
-        if (result._meta.confidence < BATCH_QUALITY_THRESHOLD) {
-          lowConfidenceIndices.push(batch.indexOf(matchingImage));
+        if (item.result._meta.confidence < BATCH_QUALITY_THRESHOLD) {
+          lowConfidenceIndices.push(item.sourceIndex);
         } else {
-          results.push(result);
-          statuses.set(matchingImage.id, { state: "done", result });
+          results.push(item.result);
+          statuses.set(matchingImage.id, { state: "done", result: item.result });
           processedIds.add(matchingImage.id);
         }
       }
 
       // Re-process low-confidence docs individually
       for (const idx of lowConfidenceIndices) {
-        const image = batch[idx];
+        const image = batchDocs[idx];
         if (!image || processedIds.has(image.id)) continue;
-        await processImageWithRateLimit(
-          image, images, results, statuses, processedIds,
-          batchIndex, totalBatches, batch.length,
-          rateLimiter, modelCache, onProgress, signal
-        );
+        await processImageWithRateLimit(image, ctx, batchInfo);
       }
 
       batchSucceeded = true;
@@ -787,17 +813,13 @@ export async function processFiles({
 
     // Fallback: process remaining unprocessed docs individually
     if (!batchSucceeded) {
-      for (const image of batch) {
+      for (const image of batchDocs) {
         if (processedIds.has(image.id)) continue;
-        await processImageWithRateLimit(
-          image, images, results, statuses, processedIds,
-          batchIndex, totalBatches, batch.length,
-          rateLimiter, modelCache, onProgress, signal
-        );
+        await processImageWithRateLimit(image, ctx, batchInfo);
       }
     }
 
-    onProgress(createProgress(images, results, statuses, batchIndex, totalBatches, batch.length, rateLimiter, false, 0));
+    onProgress(createProgress(ctx, batchInfo, false, 0));
   }
 
   return results;
