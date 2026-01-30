@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import type { ExtractedResolution } from "@/types";
+import { getConfidenceClassName, getConfidenceTag, getConfidenceTagKorean } from "@/utils";
 import styles from "./DetailModal.module.css";
 
 export interface DetailModalProps {
@@ -89,9 +90,9 @@ export function DetailModal({
             {result._meta.page_number ? ` (p.${result._meta.page_number})` : ""}
           </span>
           <span
-            className={`${styles.confidenceBadge} ${styles[`confidence${result._meta.confidence.charAt(0).toUpperCase()}${result._meta.confidence.slice(1)}`]}`}
+            className={`${styles.confidenceBadge} ${styles[`confidence${getConfidenceClassName(result._meta.confidence)}`]}`}
           >
-            신뢰도: {result._meta.confidence}
+            신뢰도: {result._meta.confidence} ({getConfidenceTagKorean(getConfidenceTag(result._meta.confidence))})
           </span>
         </div>
 
