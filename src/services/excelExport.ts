@@ -56,7 +56,7 @@ function generateSummaryData(results: ExtractedResolution[]): VoteTally[] {
 
 interface DetailRow {
   "원본파일": string;
-  "페이지": number | string;
+  "페이지 수": number;
   "호수": string;
   "성명": string;
   "임차인여부": string;
@@ -90,7 +90,7 @@ function generateDetailData(
 
     const row: DetailRow = {
       "원본파일": result._meta.source_file,
-      "페이지": result._meta.page_number ?? "-",
+      "페이지 수": result._meta.page_count,
       "호수": result.property_number,
       "성명": result.individual.name,
       "임차인여부": result.individual.is_lessee ? "예" : "아니오",
@@ -158,7 +158,7 @@ export function exportToXlsx({
   // Set column widths for detail
   detailWs["!cols"] = [
     { wch: 20 }, // 원본파일
-    { wch: 8 },  // 페이지
+    { wch: 10 }, // 페이지 수
     { wch: 10 }, // 호수
     { wch: 12 }, // 성명
     { wch: 10 }, // 임차인여부

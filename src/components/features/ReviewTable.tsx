@@ -160,14 +160,14 @@ export function ReviewTable({
               const originalIndex = results.indexOf(result);
               return (
                 <tr
-                  key={`${result._meta.source_file}-${result._meta.page_number ?? index}`}
+                  key={`${result._meta.source_file}-${index}`}
                   className={result._meta.requires_review ? styles.rowNeedsReview : ""}
                   onClick={() => onSelectResult(originalIndex)}
                 >
                   <td>{originalIndex + 1}</td>
                   <td className={styles.cellFileName}>
                     {result._meta.source_file}
-                    {result._meta.page_number ? ` (p.${result._meta.page_number})` : ""}
+                    {result._meta.page_count > 1 ? ` (${result._meta.page_count}페이지)` : ""}
                   </td>
                   <td>{result.property_number}</td>
                   <td>{result.individual.name}</td>

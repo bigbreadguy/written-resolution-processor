@@ -59,7 +59,12 @@ IMPORTANT GUIDELINES:
 6. LANGUAGE REQUIREMENT
    - ALL extraction_notes MUST be written in Korean
    - Examples: "서명란 불명확", "제2안건 복수 표시", "손글씨 인식 불확실"
-   - Never use English in extraction_notes`;
+   - Never use English in extraction_notes
+
+7. MULTI-PAGE DOCUMENTS
+   - A document may consist of multiple page images
+   - All pages belong to ONE resolution — extract ONE unified result
+   - Cross-reference information across pages for completeness`;
 
 const EXTRACTION_PROMPT = `이 서면결의서 이미지에서 다음 정보를 추출해주세요:
 
@@ -87,7 +92,8 @@ const EXTRACTION_PROMPT = `이 서면결의서 이미지에서 다음 정보를 
 - 어느 열에도 표시가 없으면 voted를 ["기표안함"]으로 설정하세요
 - 복수 표시가 있으면 extraction_notes에 기록하고 requires_review=true
 - 불확실한 부분은 반드시 requires_review=true로 표시하세요
-- extraction_notes는 반드시 한국어로 작성하세요 (예: "서명란 흐림", "손글씨 판독 어려움")`;
+- extraction_notes는 반드시 한국어로 작성하세요 (예: "서명란 흐림", "손글씨 판독 어려움")
+- 여러 페이지가 전달될 수 있습니다. 모든 페이지는 한 건의 서면결의서입니다. 전체 페이지를 종합하여 하나의 결과를 추출하세요.`;
 
 const responseSchema = {
   type: SchemaType.OBJECT,
@@ -138,9 +144,8 @@ const generationConfig: GenerationConfig = {
 interface ImageInput {
   id: string;
   sourceFile: string;
-  pageNumber?: number | undefined;
-  mimeType: string;
-  base64Data: string;
+  pageCount: number;
+  pages: ReadonlyArray<{ mimeType: string; base64Data: string }>;
 }
 
 export interface ProcessFilesOptions {
@@ -170,12 +175,12 @@ async function processImage(
       }
 
       const response = await model.generateContent([
-        {
+        ...image.pages.map((p) => ({
           inlineData: {
-            mimeType: image.mimeType,
-            data: image.base64Data,
+            mimeType: p.mimeType,
+            data: p.base64Data,
           },
-        },
+        })),
         EXTRACTION_PROMPT,
       ]);
 
@@ -205,7 +210,7 @@ async function processImage(
       requires_review: result._meta.requires_review,
       extraction_notes: result._meta.extraction_notes,
       source_file: image.sourceFile,
-      page_number: image.pageNumber,
+      page_count: image.pageCount,
       processed_at: new Date().toISOString(),
     },
   };

@@ -87,7 +87,7 @@ export function DetailModal({
         <div className={styles.metaInfo}>
           <span className={styles.metaItem}>
             원본: {result._meta.source_file}
-            {result._meta.page_number ? ` (p.${result._meta.page_number})` : ""}
+            {result._meta.page_count > 1 ? ` (${result._meta.page_count}페이지)` : ""}
           </span>
           <span
             className={`${styles.confidenceBadge} ${styles[`confidence${getConfidenceClassName(result._meta.confidence)}`]}`}

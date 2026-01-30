@@ -38,8 +38,8 @@ export interface ExtractionMetadata {
   extraction_notes: string[];
   /** Original source filename */
   source_file: string;
-  /** Page number (for multi-page PDFs) */
-  page_number?: number | undefined;
+  /** Total page count of the source file */
+  page_count: number;
   /** Processing timestamp */
   processed_at: string;
 }

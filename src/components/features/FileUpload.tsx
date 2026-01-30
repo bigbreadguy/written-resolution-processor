@@ -48,16 +48,14 @@ export function FileUpload({
             try {
               const pdfResult = await parsePdf(file);
 
-              for (const page of pdfResult.pages) {
-                newFiles.push({
-                  id: generateFileId(),
-                  originalFile: file,
-                  thumbnail: page.thumbnail,
-                  pageCount: pdfResult.totalPages,
-                  pageBlobs: [page.blob],
-                  status: "ready",
-                });
-              }
+              newFiles.push({
+                id: generateFileId(),
+                originalFile: file,
+                thumbnail: pdfResult.pages[0]?.thumbnail ?? null,
+                pageCount: pdfResult.totalPages,
+                pageBlobs: pdfResult.pages.map((p) => p.blob),
+                status: "ready",
+              });
             } catch (e) {
               newFiles.push({
                 id: generateFileId(),
@@ -153,6 +151,10 @@ export function FileUpload({
           <span className={styles.dropZoneSubtext}>
             JPEG, PNG, PDF 지원 (최대 {MAX_FILE_SIZE_BYTES / 1024 / 1024}MB)
           </span>
+          <span className={styles.dropZoneSubtext}>
+            한 파일에 한 건의 서면결의서만 포함해 주세요.
+            {" "}Each file should contain only one resolution document.
+          </span>
         </div>
       </DropZone>
 
@@ -180,16 +182,7 @@ export function FileUpload({
           </div>
 
           <div className={styles.fileGrid}>
-            {files.map((file, index) => {
-              // Calculate page number for multi-page PDFs
-              const pageNumber =
-                file.pageCount > 1
-                  ? files
-                      .slice(0, index + 1)
-                      .filter((f) => f.originalFile === file.originalFile).length
-                  : null;
-
-              return (
+            {files.map((file) => (
                 <div
                   key={file.id}
                   className={`${styles.fileCard} ${file.status === "error" ? styles.fileCardError : ""}`}
@@ -208,9 +201,9 @@ export function FileUpload({
                   <div className={styles.fileInfo}>
                     <span className={styles.fileName} title={file.originalFile.name}>
                       {file.originalFile.name}
-                      {pageNumber !== null ? (
+                      {file.pageCount > 1 ? (
                         <span className={styles.pageIndicator}>
-                          {" "}({pageNumber}/{file.pageCount})
+                          {" "}({file.pageCount}페이지)
                         </span>
                       ) : null}
                     </span>
@@ -231,8 +224,7 @@ export function FileUpload({
                     </svg>
                   </button>
                 </div>
-              );
-            })}
+            ))}
           </div>
         </div>
       ) : null}
