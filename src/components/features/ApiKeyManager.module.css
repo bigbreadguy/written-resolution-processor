@@ -6,7 +6,7 @@
 
 .infoBanner {
   padding: 12px 16px;
-  background-color: #eff6ff;
+  background: linear-gradient(135deg, rgba(252, 232, 236, 0.3), rgba(237, 233, 254, 0.3));
   border-radius: var(--radius);
   border-left: 4px solid var(--color-primary);
 }
@@ -44,6 +44,14 @@
   background-color: var(--color-bg-secondary);
   border-radius: var(--radius);
   border: 1px solid var(--color-border);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.keyItem:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .keyHeader {
@@ -67,10 +75,11 @@
 
 .keyLabel {
   font-size: 12px;
-  padding: 2px 8px;
-  background-color: var(--color-primary);
+  font-weight: 600;
+  padding: 2px 10px;
+  background: var(--gradient-primary);
   color: white;
-  border-radius: 4px;
+  border-radius: var(--radius-full);
 }
 
 .keyDetails {
@@ -83,8 +92,8 @@
 .tierSelect {
   padding: 6px 10px;
   font-size: 13px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
   background-color: var(--color-bg);
   color: var(--color-text);
   cursor: pointer;
@@ -92,18 +101,18 @@
 
 .keyStatus {
   font-size: 13px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
 }
 
 .available {
-  background-color: #dcfce7;
-  color: #166534;
+  background: var(--gradient-success);
+  color: var(--color-success-dark);
 }
 
 .unavailable {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background: var(--gradient-error);
+  color: var(--color-error-dark);
 }
 
 .removeButton {
@@ -145,7 +154,7 @@
 .tierSelectNew {
   padding: 10px 12px;
   font-size: 14px;
-  border: 1px solid var(--color-border);
+  border: 1.5px solid var(--color-border);
   border-radius: var(--radius);
   background-color: var(--color-bg);
   color: var(--color-text);
@@ -160,10 +169,12 @@
 
 .error {
   padding: 10px 14px;
-  background-color: #fef2f2;
-  border-radius: var(--radius);
+  background-color: var(--color-error-bg);
+  border-left: 3px solid var(--color-error);
+  border-radius: var(--radius-sm);
   color: var(--color-error);
   font-size: 14px;
+  animation: slideDown var(--duration-normal) var(--ease-out);
 }
 
 .getKeyLink {
@@ -178,7 +189,7 @@
 
 .tierInfo {
   padding: 16px;
-  background-color: #fefce8;
+  background: var(--gradient-warm);
   border-radius: var(--radius);
 }
 

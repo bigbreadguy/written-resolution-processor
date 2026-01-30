@@ -82,15 +82,15 @@
   justify-content: center;
   gap: 8px;
   padding: 8px 20px;
-  background-color: #fef3c7;
+  background-color: var(--color-warning-light);
   font-size: 13px;
-  color: #92400e;
+  color: var(--color-warning-dark);
 }
 
 .warningIcon {
   display: flex;
   align-items: center;
-  color: #d97706;
+  color: var(--color-warning);
 }
 
 .warningLink {
@@ -105,7 +105,7 @@
 }
 
 .warningLink:hover {
-  color: #92400e;
+  color: var(--color-warning-dark);
 }
 
 /* Responsive */

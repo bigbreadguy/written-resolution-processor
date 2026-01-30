@@ -28,18 +28,18 @@
 }
 
 .confidenceHigh {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
+  background: var(--gradient-success);
+  color: var(--color-success-dark);
 }
 
 .confidenceMedium {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #92400e;
+  background: var(--gradient-warning);
+  color: var(--color-warning-dark);
 }
 
 .confidenceLow {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  color: #991b1b;
+  background: var(--gradient-error);
+  color: var(--color-error-dark);
 }
 
 .notes {
@@ -48,7 +48,7 @@
   border-left: 3px solid var(--color-warning);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  color: #92400e;
+  color: var(--color-warning-dark);
 }
 
 .notes ul {

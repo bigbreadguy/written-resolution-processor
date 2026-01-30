@@ -109,7 +109,7 @@
   gap: 12px;
   padding: 16px;
   margin-bottom: 24px;
-  background-color: #ede9fe;
+  background-color: var(--color-accent-light);
   border: 1.5px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -121,7 +121,7 @@
 
 .consentLabel:hover {
   border-color: var(--color-accent);
-  background-color: #e4dffe;
+  background-color: var(--color-accent-light-hover);
 }
 
 .checkbox {

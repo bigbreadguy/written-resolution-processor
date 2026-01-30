@@ -72,18 +72,18 @@
 }
 
 .statCardSuccess {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  border-color: #86efac;
+  background: var(--gradient-success);
+  border-color: var(--color-success-border);
 }
 
 .statCardWarning {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border-color: #fcd34d;
+  background: var(--gradient-warning);
+  border-color: var(--color-warning-border);
 }
 
 .statCardError {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  border-color: #fca5a5;
+  background: var(--gradient-error);
+  border-color: var(--color-error-border);
 }
 
 .statValue {
@@ -181,12 +181,12 @@
 }
 
 .rowNeedsReview {
-  background-color: #fff7ed;
+  background-color: var(--color-warning-bg);
   border-left: 3px solid var(--color-warning);
 }
 
 .rowNeedsReview:hover {
-  background-color: #fff1e0 !important;
+  background-color: var(--color-warning-bg-hover) !important;
 }
 
 .cellFileName {
@@ -205,18 +205,18 @@
 }
 
 .confidenceHigh {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
+  background: var(--gradient-success);
+  color: var(--color-success-dark);
 }
 
 .confidenceMedium {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #92400e;
+  background: var(--gradient-warning);
+  color: var(--color-warning-dark);
 }
 
 .confidenceLow {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  color: #991b1b;
+  background: var(--gradient-error);
+  color: var(--color-error-dark);
 }
 
 .reviewBadge {
@@ -225,8 +225,8 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  color: #991b1b;
+  background: var(--gradient-error);
+  color: var(--color-error-dark);
 }
 
 .okBadge {
@@ -244,7 +244,7 @@
   margin-bottom: 20px;
   padding: 16px;
   background-color: #fefce8;
-  border: 1px solid #fcd34d;
+  border: 1px solid var(--color-warning-border);
   border-radius: var(--radius);
 }
 
@@ -258,13 +258,13 @@
 .inspectionIcon {
   display: flex;
   align-items: center;
-  color: #d97706;
+  color: var(--color-warning);
 }
 
 .inspectionTitle {
   font-size: 14px;
   font-weight: 600;
-  color: #92400e;
+  color: var(--color-warning-dark);
 }
 
 .inspectionCount {
@@ -277,8 +277,8 @@
   padding: 2px 10px;
   font-size: 12px;
   font-weight: 600;
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  color: #991b1b;
+  background: var(--gradient-error);
+  color: var(--color-error-dark);
   border-radius: var(--radius-full);
 }
 
@@ -286,8 +286,8 @@
   padding: 2px 10px;
   font-size: 12px;
   font-weight: 600;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #92400e;
+  background: var(--gradient-warning);
+  color: var(--color-warning-dark);
   border-radius: var(--radius-full);
 }
 
@@ -307,11 +307,11 @@
 }
 
 .findingError {
-  color: #991b1b;
+  color: var(--color-error-dark);
 }
 
 .findingWarning {
-  color: #92400e;
+  color: var(--color-warning-dark);
 }
 
 .findingInfo {

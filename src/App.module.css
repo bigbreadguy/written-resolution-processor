@@ -9,14 +9,19 @@
   padding: 1rem 1.5rem;
   margin: 1rem auto;
   max-width: 800px;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.5rem;
-  color: #991b1b;
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-left: 4px solid var(--color-error);
+  border-radius: var(--radius);
+  color: var(--color-error-dark);
+  animation: slideDown var(--duration-normal) var(--ease-out);
 }
 
 .errorIcon {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--color-error);
 }
 
 .errorText {
@@ -26,15 +31,23 @@
 
 .errorDismiss {
   flex-shrink: 0;
-  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   background: none;
   border: none;
-  font-size: 1.25rem;
+  border-radius: var(--radius-full);
   cursor: pointer;
-  color: #991b1b;
-  opacity: 0.7;
+  color: var(--color-error-dark);
+  transition:
+    background-color var(--duration-fast),
+    color var(--duration-fast);
 }
 
 .errorDismiss:hover {
-  opacity: 1;
+  background-color: var(--color-error-light);
+  color: var(--color-error);
 }
