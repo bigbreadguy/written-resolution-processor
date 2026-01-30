@@ -124,6 +124,7 @@ src/
 │   ├── ui/           # Reusable primitives
 │   └── features/     # Feature-specific components
 ├── services/         # API integration, export, rate limiting, inspection
+│   └── __tests__/    # Service smoke tests (vitest)
 ├── hooks/            # Custom React hooks (useApiKeys, useAiAcknowledgment)
 ├── utils/            # Pure utility functions (confidence, string, retry, fileValidation)
 ├── types/

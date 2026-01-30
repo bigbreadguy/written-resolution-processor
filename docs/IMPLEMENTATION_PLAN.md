@@ -43,6 +43,7 @@ Implement core MVP features: API key management, multi-file upload, Gemini proce
   "devDependencies": {
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
+    "vitest": "^4.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
@@ -76,6 +77,8 @@ src/
 │       ├── ReviewTable.tsx
 │       └── index.ts
 ├── services/
+│   ├── __tests__/
+│   │   └── gemini.test.ts
 │   ├── gemini.ts
 │   ├── pdfParser.ts
 │   ├── excelExport.ts
@@ -199,6 +202,15 @@ src/
 - Quality validation: reject batch if any item confidence < 30
 - Fallback to individual processing on batch quality failure
 - Batch response schema with source_index for result mapping
+
+---
+
+## Phase 11: Test Infrastructure
+
+- Test runner: vitest (integrates with vite config for alias resolution)
+- Smoke tests for Gemini processing pipeline (batch count/index validation, single-doc path, batch fallback)
+- Mocks: `@google/generative-ai`, `@/utils`, `../rateLimiter`
+- Scripts: `pnpm test` (single run), `pnpm test:watch` (watch mode)
 
 ---
 

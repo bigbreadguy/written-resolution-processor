@@ -412,6 +412,14 @@ interface GeminiBatchExtractionResponse {
   documents: GeminiBatchExtractionItem[];
 }
 
+/**
+ * Internal result from processBatch, pairing extraction data with its batch index
+ */
+interface BatchResultItem {
+  readonly result: ExtractedResolution;
+  readonly sourceIndex: number;
+}
+
 // ── File Processing Types ──
 
 /**
