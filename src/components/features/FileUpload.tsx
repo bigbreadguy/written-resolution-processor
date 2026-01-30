@@ -132,7 +132,7 @@ export function FileUpload({
       </div>
 
       <DropZone
-        onFilesSelected={handleFilesSelected}
+        onFilesSelected={(files) => { void handleFilesSelected(files); }}
         accept={ACCEPTED_FILE_EXTENSIONS}
         disabled={isLoading || isProcessing}
       >

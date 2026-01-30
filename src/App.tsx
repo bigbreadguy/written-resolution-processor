@@ -316,7 +316,7 @@ export function App(): ReactNode {
           <FileUpload
             files={effectiveState.files}
             onFilesChange={handleFilesChange}
-            onStartProcessing={handleStartProcessing}
+            onStartProcessing={() => { void handleStartProcessing(); }}
             isProcessing={false}
           />
         </>

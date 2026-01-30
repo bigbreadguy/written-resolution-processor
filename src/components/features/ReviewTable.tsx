@@ -122,21 +122,21 @@ export function ReviewTable({
         <button
           type="button"
           className={`${styles.filterButton} ${filter === "all" ? styles.filterButtonActive : ""}`}
-          onClick={() => setFilter("all")}
+          onClick={() => { setFilter("all"); }}
         >
           전체 ({results.length})
         </button>
         <button
           type="button"
           className={`${styles.filterButton} ${filter === "needs-review" ? styles.filterButtonActive : ""}`}
-          onClick={() => setFilter("needs-review")}
+          onClick={() => { setFilter("needs-review"); }}
         >
           검토 필요 ({summary.needsReview})
         </button>
         <button
           type="button"
           className={`${styles.filterButton} ${filter === "low-confidence" ? styles.filterButtonActive : ""}`}
-          onClick={() => setFilter("low-confidence")}
+          onClick={() => { setFilter("low-confidence"); }}
         >
           낮은 신뢰도 ({summary.lowConfidence})
         </button>
@@ -162,7 +162,7 @@ export function ReviewTable({
                 <tr
                   key={`${result._meta.source_file}-${index}`}
                   className={result._meta.requires_review ? styles.rowNeedsReview : ""}
-                  onClick={() => onSelectResult(originalIndex)}
+                  onClick={() => { onSelectResult(originalIndex); }}
                 >
                   <td>{originalIndex + 1}</td>
                   <td className={styles.cellFileName}>

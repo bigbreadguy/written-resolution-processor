@@ -71,7 +71,7 @@ export function inspectResults(results: ExtractedResolution[]): InspectionReport
     if (!propertyMap.has(prop)) {
       propertyMap.set(prop, []);
     }
-    propertyMap.get(prop)!.push(index);
+    propertyMap.get(prop)?.push(index);
   });
 
   for (const [prop, indices] of propertyMap) {
@@ -127,7 +127,7 @@ export function inspectResults(results: ExtractedResolution[]): InspectionReport
     if (!propertyNameMap.has(prop)) {
       propertyNameMap.set(prop, new Set());
     }
-    propertyNameMap.get(prop)!.add(result.individual.name.trim());
+    propertyNameMap.get(prop)?.add(result.individual.name.trim());
   });
 
   for (const [prop, names] of propertyNameMap) {
