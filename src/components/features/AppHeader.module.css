@@ -2,8 +2,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background-color: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--gradient-header);
+  box-shadow: var(--shadow-md);
 }
 
 .container {
@@ -25,12 +25,12 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: var(--color-text);
+  color: white;
 }
 
 .subtitle {
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .actions {
@@ -43,31 +43,37 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  padding: 6px 14px;
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
 }
 
 .keyStatus:hover {
-  background-color: var(--color-border);
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .keyStatus.noKeys {
-  background-color: #fef3c7;
-  border-color: #f59e0b;
+  background-color: rgba(254, 243, 199, 0.3);
+  border-color: rgba(245, 158, 11, 0.5);
 }
 
 .keyIcon {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  color: white;
 }
 
 .keyCount {
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-text);
+  color: white;
 }
 
 .warning {
@@ -82,7 +88,9 @@
 }
 
 .warningIcon {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  color: #d97706;
 }
 
 .warningLink {
