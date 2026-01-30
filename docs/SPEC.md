@@ -1,8 +1,8 @@
 # Product Specification: Written Resolution Processor
 
-**Version**: 1.0.0-draft  
-**Last Updated**: 2026-01-28  
-**Status**: Planning Phase
+**Version**: 1.1.0
+**Last Updated**: 2026-01-30
+**Status**: MVP Implemented
 
 ---
 
@@ -128,6 +128,7 @@ And I should be able to click a row to see the source image
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | FR-01 | Support JPEG, PNG image upload | HIGH |
+| FR-01b | Support WebP image upload | HIGH |
 | FR-02 | Support single-page PDF upload | HIGH |
 | FR-03 | Support multi-page PDF upload (each page = one resolution) | HIGH |
 | FR-04 | Drag-and-drop upload interface | HIGH |
@@ -141,7 +142,10 @@ And I should be able to click a row to see the source image
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-10 | Send files to Gemini API in batches of 5-10 | HIGH |
+| FR-10 | Send files to Gemini API via dynamic batching (max 3 docs, 25K token budget) | HIGH |
+| FR-10b | Dynamic batch sizing based on per-document page count and token estimate | HIGH |
+| FR-10c | Quality validation: reject batch results with any confidence below threshold (30) | HIGH |
+| FR-10d | Fallback to individual processing when batch quality validation fails | HIGH |
 | FR-11 | Extract all fields defined in data model | HIGH |
 | FR-12 | Include confidence level for each extraction | HIGH |
 | FR-13 | Flag items requiring human review | HIGH |
@@ -179,6 +183,26 @@ And I should be able to click a row to see the source image
 | FR-30 | Allow clearing stored API key | HIGH |
 | FR-31 | Validate API key before saving | HIGH |
 | FR-32 | Show AI usage consent on first use | HIGH |
+
+### 4.6 Multi-Key Rate Limiting
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR-33 | Support one or more Gemini API keys | HIGH |
+| FR-34 | User-selectable tier per key (free, tier1, tier2) | HIGH |
+| FR-35 | Token bucket rate limiting per key (based on RPM) | HIGH |
+| FR-36 | Daily request tracking per key (resets at midnight PT) | HIGH |
+| FR-37 | Automatic key rotation: select key with most available tokens | HIGH |
+| FR-38 | Migration from single-key to multi-key localStorage format | MEDIUM |
+
+### 4.7 Post-Extraction Inspection
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR-39 | Validate extracted results: detect duplicates, missing votes, name inconsistencies, low confidence, ambiguous votes | HIGH |
+| FR-40 | Generate human-readable inspection report with finding counts and details | HIGH |
+| FR-41 | Include inspection notes in Excel export (Sheet 3: verification report) | MEDIUM |
+| FR-42 | Flag ambiguous mark detections for human review | HIGH |
 
 ---
 
@@ -261,7 +285,8 @@ And I should be able to click a row to see the source image
 | **Build** | Vite | Fast dev server, optimized builds |
 | **AI SDK** | `@google/generative-ai` | Official Gemini SDK |
 | **Excel** | `xlsx` (SheetJS) | Industry standard, no dependencies |
-| **PDF** | `pdf-lib` or `pdfjs-dist` | Client-side PDF processing |
+| **PDF** | `pdfjs-dist` | Client-side PDF parsing and page extraction |
+| **Gemini Model** | `gemini-2.5-flash` | Fast, cost-effective multimodal extraction |
 | **Styling** | CSS Modules | Scoped styles, no runtime overhead |
 | **Deployment** | Vercel | Easy deployment, good DX |
 
@@ -270,8 +295,8 @@ And I should be able to click a row to see the source image
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | **Architecture** | Client-only SPA | Privacy (no server stores data), simplicity |
-| **API Key** | User provides own | No backend cost, user controls usage |
-| **Batch Size** | 5-10 files per request | Balance between throughput and API limits |
+| **API Key** | User provides one or more keys with tier selection | No backend cost, user controls usage, rate-limit aware rotation |
+| **Batch Size** | Dynamic: max 3 docs, 25K token budget | Optimized per-request token usage with quality validation fallback |
 | **State Management** | React useState/useReducer | App complexity doesn't warrant Redux |
 | **Image Preprocessing** | Optional (future) | Start simple, add if accuracy issues |
 
@@ -332,18 +357,21 @@ interface VoteItem {
  * Metadata added by the system during extraction
  */
 interface ExtractionMetadata {
-  /** Overall confidence level for this extraction */
-  confidence: 'high' | 'medium' | 'low';
-  
+  /** Overall confidence score for this extraction (0-100) */
+  confidence: number;
+
   /** Whether this item should be flagged for human review */
   requires_review: boolean;
-  
+
   /** Specific notes about extraction issues */
-  extraction_notes?: string[];
-  
+  extraction_notes: string[];
+
   /** Original source filename */
   source_file: string;
-  
+
+  /** Total page count of the source file */
+  page_count: number;
+
   /** Processing timestamp */
   processed_at: string;
 }
@@ -367,14 +395,94 @@ interface ProcessingResult {
     needs_review: number;
   };
 }
+
+// ── Batch Types ──
+
+/**
+ * Single extraction result within a multi-document batch response
+ */
+interface GeminiBatchExtractionItem extends GeminiExtractionResponse {
+  source_index: number;
+}
+
+/**
+ * Wrapper for batch extraction response
+ */
+interface GeminiBatchExtractionResponse {
+  documents: GeminiBatchExtractionItem[];
+}
+
+// ── File Processing Types ──
+
+/**
+ * Represents a file ready for processing
+ */
+interface ProcessableFile {
+  id: string;
+  originalFile: File;
+  thumbnail: string | null;
+  pageCount: number;
+  pageBlobs: Blob[];
+  status: "pending" | "ready" | "error";
+  errorMessage?: string;
+}
+
+/**
+ * Status of a single file during processing
+ */
+type FileProcessingStatus =
+  | { state: "pending" }
+  | { state: "processing" }
+  | { state: "done"; result: ExtractedResolution }
+  | { state: "error"; error: string };
+
+// ── Rate Limiting Types ──
+
+type ApiTier = "free" | "tier1" | "tier2";
+
+interface TierLimits {
+  rpm: number;
+  tpm: number;
+  rpd: number | null;
+}
+
+interface ApiKeyEntry {
+  id: string;
+  key: string;
+  tier: ApiTier;
+  label?: string;
+  addedAt: string;
+}
+
+interface TokenBucketState {
+  tokens: number;
+  maxTokens: number;
+  lastRefill: number;
+}
+
+interface DailyUsage {
+  count: number;
+  resetAt: number;
+}
+
+interface KeyStatusInfo {
+  keyId: string;
+  label?: string;
+  tier: ApiTier;
+  availableTokens: number;
+  maxTokens: number;
+  dailyUsed: number;
+  dailyLimit: number | null;
+  isAvailable: boolean;
+  isExhausted: boolean;
+}
 ```
 
 ### 7.2 Gemini Response Schema
 
+#### Single-document response
+
 ```typescript
-/**
- * Schema for Gemini API structured output
- */
 const geminiResponseSchema = {
   type: "object",
   properties: {
@@ -406,29 +514,49 @@ const geminiResponseSchema = {
     _meta: {
       type: "object",
       properties: {
-        confidence: { type: "string", enum: ["high", "medium", "low"] },
+        confidence: { type: "integer" },  // 0-100
         requires_review: { type: "boolean" },
         extraction_notes: { type: "array", items: { type: "string" } }
       },
-      required: ["confidence", "requires_review"]
+      required: ["confidence", "requires_review", "extraction_notes"]
     }
   },
   required: ["document_title", "individual", "votes", "_meta"]
 };
 ```
 
+#### Batch response (multi-document)
+
+```typescript
+const geminiBatchResponseSchema = {
+  type: "object",
+  properties: {
+    documents: {
+      type: "array",
+      items: {
+        // Same as single-document schema, plus:
+        // source_index: { type: "integer" }  — 0-based index into the batch
+      }
+    }
+  },
+  required: ["documents"]
+};
+```
+
 ### 7.3 Export Schema (XLSX)
 
-**Sheet 1: Summary**
+**Sheet 1: Summary (집계)**
 | Column | Description |
 |--------|-------------|
 | Agenda | Agenda item text |
 | 찬성 (Approve) | Count of approve votes |
 | 반대 (Reject) | Count of reject votes |
 | 기권 (Abstain) | Count of abstain votes |
+| 기표안함 (No Mark) | Count of unmarked ballots |
+| 기타 (Other) | Count of unrecognized or ambiguous marks |
 | Total | Total votes for this agenda |
 
-**Sheet 2: Detail**
+**Sheet 2: Detail (상세)**
 | Column | Description |
 |--------|-------------|
 | Source File | Original filename |
@@ -441,8 +569,18 @@ const geminiResponseSchema = {
 | Agenda 1 | Vote for first agenda |
 | Agenda 2 | Vote for second agenda |
 | ... | Additional agendas |
-| Confidence | Extraction confidence |
+| Page Count | 페이지수 — number of pages in source file |
+| Confidence | Extraction confidence (0-100 numeric) |
 | Needs Review | Whether flagged for review |
+| Notes | 비고 — extraction notes and inspection findings |
+
+**Sheet 3: Verification Report (검증보고서)**
+| Column | Description |
+|--------|-------------|
+| Finding Type | Category of finding (duplicate, missing vote, low confidence, etc.) |
+| Severity | Warning or Error |
+| Document | Affected source file / property number |
+| Description | Human-readable description of the finding |
 
 ---
 
@@ -575,18 +713,21 @@ IMPORTANT GUIDELINES:
    - Dates may appear as "2026년 1월 28일" or "2026-01-28"
    - Phone numbers should be normalized to "010-XXXX-XXXX" format
 
-2. CONFIDENCE RATING
-   - HIGH: All text clearly visible and printed
-   - MEDIUM: Some text handwritten or slightly unclear
-   - LOW: Text blurry, partially obscured, or inconsistent
+2. CONFIDENCE RATING (integer 0-100)
+   - 90-100: All text clearly visible and printed, all fields legible
+   - 50-89: Some text handwritten or slightly unclear, minor ambiguity
+   - 0-49: Text blurry, partially obscured, or inconsistent; fields missing or illegible
 
 3. REVIEW FLAGS
-   - Set requires_review=true if confidence is not HIGH
+   - Set requires_review=true if confidence < 90
+   - extraction_notes is required (use empty array [] if no issues)
    - Add extraction_notes for specific issues (e.g., "blurry signature area", "handwritten name")
 
 4. VOTE RECOGNITION
-   - Look for checkmarks (✓), circles (○), or filled boxes (■)
+   - Mark types: checkmarks (✓, ✔), circles (○, ●), filled boxes (■, ☑), handwritten marks
+   - Position-based detection: determine voted option by mark position relative to option labels
    - Common options: 찬성 (approve), 반대 (reject), 기권 (abstain)
+   - 기표안함: when no mark is detected for an agenda item, set voted to ["기표안함"]
    - Extract ALL agenda items and their votes
 
 5. HANDLING UNCERTAINTY
@@ -626,8 +767,9 @@ IMPORTANT GUIDELINES:
 
 | Factor | Current Approach | Potential Improvement |
 |--------|------------------|----------------------|
-| **Batch processing** | Send 5-10 images per request | Test optimal batch size for accuracy vs speed |
-| **Image resolution** | Accept as-is | Add client-side preprocessing if needed |
+| **Batch processing** | Dynamic batching: max 3 docs, 25K token budget per request | Tune token budget and max docs based on real-world accuracy data |
+| **Quality validation** | Reject batch if any item scores below threshold (30); fallback to individual | Adjust threshold based on observed batch vs individual accuracy |
+| **Image resolution** | Accept as-is (medium = 560 tokens/image) | Add client-side preprocessing if needed |
 | **Language** | Korean prompt | Test bilingual prompt for edge cases |
 | **Few-shot examples** | None currently | Add 2-3 examples if accuracy issues |
 
@@ -757,20 +899,33 @@ IMPORTANT GUIDELINES:
 ### 11.2 State Management
 
 ```typescript
-type AppState = 
-  | { step: 'landing' }
-  | { step: 'api-key-setup' }
-  | { step: 'upload', files: File[] }
-  | { step: 'processing', files: File[], progress: ProcessingProgress }
-  | { step: 'review', results: ExtractedResolution[] }
-  | { step: 'detail', results: ExtractedResolution[], selectedIndex: number };
+type AppStep = "landing" | "api-key-setup" | "upload" | "processing" | "review";
 
-interface ProcessingProgress {
-  total: number;
-  completed: number;
-  current: string | null;
-  statuses: Map<string, 'pending' | 'processing' | 'done' | 'error' | 'review'>;
+interface AppState {
+  step: AppStep;
+  apiKeys: ApiKeyEntry[];
+  hasAcknowledgedAI: boolean;
+  files: ProcessableFile[];
+  processingProgress: ProcessingProgressExtended | null;
+  results: ExtractedResolution[];
+  selectedResultIndex: number | null;
 }
+
+type AppAction =
+  | { type: "ACKNOWLEDGE_AI" }
+  | { type: "SET_API_KEYS"; payload: ApiKeyEntry[] }
+  | { type: "CLEAR_API_KEYS" }
+  | { type: "GO_TO_STEP"; payload: AppStep }
+  | { type: "ADD_FILES"; payload: ProcessableFile[] }
+  | { type: "REMOVE_FILE"; payload: string }
+  | { type: "CLEAR_FILES" }
+  | { type: "START_PROCESSING" }
+  | { type: "UPDATE_PROGRESS"; payload: ProcessingProgressExtended }
+  | { type: "PROCESSING_COMPLETE"; payload: ExtractedResolution[] }
+  | { type: "PROCESSING_ERROR"; payload: string }
+  | { type: "UPDATE_RESULT"; payload: { index: number; data: Partial<ExtractedResolution> } }
+  | { type: "SELECT_RESULT"; payload: number | null }
+  | { type: "RESET" };
 ```
 
 ---
@@ -897,3 +1052,4 @@ Track (anonymized):
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0-draft | 2026-01-28 | AI Assistant | Initial specification |
+| 1.1.0 | 2026-01-30 | AI Assistant | Reflect MVP implementation: dynamic batching, numeric confidence, multi-key rate limiting, post-extraction inspection, WebP support, updated types and export schema |
