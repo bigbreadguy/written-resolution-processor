@@ -1,10 +1,10 @@
 import { type ReactNode } from "react";
 import { Button, ProgressBar } from "@/components/ui";
-import type { ProcessingProgress } from "@/types";
+import type { ProcessingProgressExtended } from "@/types";
 import styles from "./ProcessingView.module.css";
 
 export interface ProcessingViewProps {
-  progress: ProcessingProgress;
+  progress: ProcessingProgressExtended;
   onCancel: () => void;
 }
 
@@ -63,6 +63,7 @@ export function ProcessingView({
 
         <div className={styles.batchInfo}>
           배치 {progress.currentBatch} / {progress.totalBatches}
+          {progress.currentBatchSize > 0 ? ` (${progress.currentBatchSize}건)` : null}
         </div>
 
         <div className={styles.actions}>

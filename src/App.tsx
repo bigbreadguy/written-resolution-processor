@@ -82,6 +82,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
           keyStatuses: [],
           isWaitingForKey: false,
           waitTimeMs: 0,
+          currentBatchSize: 0,
         },
       };
     case "UPDATE_PROGRESS":
