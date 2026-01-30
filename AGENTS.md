@@ -57,6 +57,25 @@ See [docs/SPEC.md](./docs/SPEC.md) Section 8 (AI Compliance) for full details.
 
 ---
 
+## Documentation Maintenance
+
+After completing any code change, update the relevant documentation to keep docs in sync with the codebase.
+
+| Change Type | Documents to Update |
+|-------------|---------------------|
+| New/removed file or directory | `AGENTS.md` (file structure), `docs/IMPLEMENTATION_PLAN.md` (file tree) |
+| New/changed type or interface | `docs/SPEC.md` (Section 7: Data Model) |
+| New/changed functional requirement | `docs/SPEC.md` (Section 4: Functional Requirements) |
+| New/changed export columns or sheets | `docs/SPEC.md` (Section 7.3: Export Schema) |
+| New/changed Gemini prompt or schema | `docs/SPEC.md` (Section 10: Prompt Engineering) |
+| New feature or major enhancement | `README.md` (Features list), `docs/IMPLEMENTATION_PLAN.md` (add phase) |
+| Dependency added/removed/upgraded | `docs/IMPLEMENTATION_PLAN.md` (Dependencies), `README.md` (Tech Stack) |
+| State or action type change | `docs/SPEC.md` (Section 11.2: State Management) |
+
+> **Note**: `CLAUDE.md` and `GEMINI.md` are symlinks to `AGENTS.md` — only edit `AGENTS.md`.
+
+---
+
 ## Package Manager
 - Use pnpm (not npm or yarn)
 - Enable via `corepack enable pnpm` if not installed
@@ -104,7 +123,10 @@ src/
 ├── components/
 │   ├── ui/           # Reusable primitives
 │   └── features/     # Feature-specific components
-├── utils/
+├── services/         # API integration, export, rate limiting, inspection
+│   └── __tests__/    # Service smoke tests (vitest)
+├── hooks/            # Custom React hooks (useApiKeys, useAiAcknowledgment)
+├── utils/            # Pure utility functions (confidence, string, retry, fileValidation)
 ├── types/
 └── constants/
 ```
@@ -118,5 +140,5 @@ src/
 
 - **Platform**: Vercel (private repo)
 - **Config**: `vercel.json` with `framework: "vite"`
-- **Analytics**: Vercel Analytics (`@vercel/analytics`) + Google Analytics (gtag.js)
+- **Analytics**: Planned - not yet integrated (neither Vercel Analytics nor Google Analytics are in the codebase)
 - **Important**: Do not add `base` path in vite.config.ts for Vercel deployment

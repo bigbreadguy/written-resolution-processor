@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import type { ExtractedResolution } from "@/types";
+import { getConfidenceClassName, getConfidenceTag, getConfidenceTagKorean } from "@/utils";
 import styles from "./DetailModal.module.css";
 
 export interface DetailModalProps {
@@ -86,12 +87,12 @@ export function DetailModal({
         <div className={styles.metaInfo}>
           <span className={styles.metaItem}>
             원본: {result._meta.source_file}
-            {result._meta.page_number ? ` (p.${result._meta.page_number})` : ""}
+            {result._meta.page_count > 1 ? ` (${result._meta.page_count}페이지)` : ""}
           </span>
           <span
-            className={`${styles.confidenceBadge} ${styles[`confidence${result._meta.confidence.charAt(0).toUpperCase()}${result._meta.confidence.slice(1)}`]}`}
+            className={`${styles.confidenceBadge} ${styles[`confidence${getConfidenceClassName(result._meta.confidence)}`]}`}
           >
-            신뢰도: {result._meta.confidence}
+            신뢰도: {result._meta.confidence} ({getConfidenceTagKorean(getConfidenceTag(result._meta.confidence))})
           </span>
         </div>
 
@@ -112,16 +113,16 @@ export function DetailModal({
             <Input
               label="문서 제목"
               value={editedResult.document_title}
-              onChange={(e) =>
-                handleFieldChange("document_title", e.target.value)
-              }
+              onChange={(e) => {
+                handleFieldChange("document_title", e.target.value);
+              }}
             />
             <Input
               label="호수"
               value={editedResult.property_number}
-              onChange={(e) =>
-                handleFieldChange("property_number", e.target.value)
-              }
+              onChange={(e) => {
+                handleFieldChange("property_number", e.target.value);
+              }}
             />
           </div>
         </div>
@@ -132,32 +133,32 @@ export function DetailModal({
             <Input
               label="성명"
               value={editedResult.individual.name}
-              onChange={(e) =>
-                handleFieldChange("individual.name", e.target.value)
-              }
+              onChange={(e) => {
+                handleFieldChange("individual.name", e.target.value);
+              }}
             />
             <Input
               label="생년월일"
               value={editedResult.individual.birth_string}
-              onChange={(e) =>
-                handleFieldChange("individual.birth_string", e.target.value)
-              }
+              onChange={(e) => {
+                handleFieldChange("individual.birth_string", e.target.value);
+              }}
             />
             <Input
               label="연락처"
               value={editedResult.individual.contact_number}
-              onChange={(e) =>
-                handleFieldChange("individual.contact_number", e.target.value)
-              }
+              onChange={(e) => {
+                handleFieldChange("individual.contact_number", e.target.value);
+              }}
             />
             <div className={styles.checkboxField}>
               <label>
                 <input
                   type="checkbox"
                   checked={editedResult.individual.is_lessee}
-                  onChange={(e) =>
-                    handleFieldChange("individual.is_lessee", e.target.checked)
-                  }
+                  onChange={(e) => {
+                    handleFieldChange("individual.is_lessee", e.target.checked);
+                  }}
                 />
                 임차인 여부
               </label>
@@ -166,9 +167,9 @@ export function DetailModal({
           <Input
             label="주소"
             value={editedResult.individual.residential_address}
-            onChange={(e) =>
-              handleFieldChange("individual.residential_address", e.target.value)
-            }
+            onChange={(e) => {
+              handleFieldChange("individual.residential_address", e.target.value);
+            }}
           />
         </div>
 
@@ -204,12 +205,12 @@ export function DetailModal({
                   <Input
                     label="투표 결과"
                     value={vote.voted.join(", ")}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       handleVoteChange(
                         index,
                         e.target.value.split(",").map((v) => v.trim())
-                      )
-                    }
+                      );
+                    }}
                   />
                 )}
               </div>

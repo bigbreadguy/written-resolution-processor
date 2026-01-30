@@ -82,6 +82,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
           keyStatuses: [],
           isWaitingForKey: false,
           waitTimeMs: 0,
+          currentBatchSize: 0,
         },
       };
     case "UPDATE_PROGRESS":
@@ -193,27 +194,30 @@ export function App(): ReactNode {
     abortControllerRef.current = new AbortController();
 
     try {
-      // Convert files to image inputs
+      // Convert files to image inputs (one ImageInput per file, with all pages)
       const images = await Promise.all(
-        readyFiles.flatMap((file) =>
-          file.pageBlobs.map(async (blob, pageIndex) => {
-            const base64 = await blobToBase64(blob);
-            return {
-              id: `${file.id}_${pageIndex}`,
-              sourceFile: file.originalFile.name,
-              pageNumber: file.pageCount > 1 ? pageIndex + 1 : undefined,
-              mimeType: getMimeTypeFromBase64(base64),
-              base64Data: getBase64Data(base64),
-            };
-          })
-        )
+        readyFiles.map(async (file) => {
+          const pages = await Promise.all(
+            file.pageBlobs.map(async (blob) => {
+              const base64 = await blobToBase64(blob);
+              return {
+                mimeType: getMimeTypeFromBase64(base64),
+                base64Data: getBase64Data(base64),
+              };
+            })
+          );
+          return {
+            id: file.id,
+            sourceFile: file.originalFile.name,
+            pageCount: file.pageCount,
+            pages,
+          };
+        })
       );
-
-      const flatImages = images.flat();
 
       const results = await processFiles({
         apiKeys: effectiveState.apiKeys,
-        images: flatImages,
+        images,
         onProgress: (progress: ProcessingProgressExtended) => {
           dispatch({ type: "UPDATE_PROGRESS", payload: progress });
         },
@@ -313,7 +317,7 @@ export function App(): ReactNode {
           <FileUpload
             files={effectiveState.files}
             onFilesChange={handleFilesChange}
-            onStartProcessing={handleStartProcessing}
+            onStartProcessing={() => { void handleStartProcessing(); }}
             isProcessing={false}
           />
         </>

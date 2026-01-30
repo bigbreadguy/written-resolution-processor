@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui";
 import { exportToXlsx, generateExportSummary, inspectResults } from "@/services";
 import type { ExtractedResolution } from "@/types";
+import { getConfidenceClassName, getConfidenceTag, getConfidenceTagKorean, isLowConfidence } from "@/utils";
 import styles from "./ReviewTable.module.css";
 
 export interface ReviewTableProps {
@@ -29,7 +30,7 @@ export function ReviewTable({
       case "needs-review":
         return results.filter((r) => r._meta.requires_review);
       case "low-confidence":
-        return results.filter((r) => r._meta.confidence === "low");
+        return results.filter((r) => isLowConfidence(r._meta.confidence));
       default:
         return results;
     }
@@ -39,17 +40,8 @@ export function ReviewTable({
     exportToXlsx({ results, inspectionReport });
   }, [results, inspectionReport]);
 
-  const getConfidenceClass = (confidence: string): string => {
-    switch (confidence) {
-      case "high":
-        return styles.confidenceHigh ?? "";
-      case "medium":
-        return styles.confidenceMedium ?? "";
-      case "low":
-        return styles.confidenceLow ?? "";
-      default:
-        return "";
-    }
+  const getConfidenceClass = (confidence: number): string => {
+    return styles[`confidence${getConfidenceClassName(confidence)}`] ?? "";
   };
 
   return (
@@ -130,21 +122,21 @@ export function ReviewTable({
         <button
           type="button"
           className={`${styles.filterButton} ${filter === "all" ? styles.filterButtonActive : ""}`}
-          onClick={() => setFilter("all")}
+          onClick={() => { setFilter("all"); }}
         >
           전체 ({results.length})
         </button>
         <button
           type="button"
           className={`${styles.filterButton} ${filter === "needs-review" ? styles.filterButtonActive : ""}`}
-          onClick={() => setFilter("needs-review")}
+          onClick={() => { setFilter("needs-review"); }}
         >
           검토 필요 ({summary.needsReview})
         </button>
         <button
           type="button"
           className={`${styles.filterButton} ${filter === "low-confidence" ? styles.filterButtonActive : ""}`}
-          onClick={() => setFilter("low-confidence")}
+          onClick={() => { setFilter("low-confidence"); }}
         >
           낮은 신뢰도 ({summary.lowConfidence})
         </button>
@@ -168,14 +160,14 @@ export function ReviewTable({
               const originalIndex = results.indexOf(result);
               return (
                 <tr
-                  key={`${result._meta.source_file}-${result._meta.page_number ?? index}`}
+                  key={`${result._meta.source_file}-${index}`}
                   className={result._meta.requires_review ? styles.rowNeedsReview : ""}
-                  onClick={() => onSelectResult(originalIndex)}
+                  onClick={() => { onSelectResult(originalIndex); }}
                 >
                   <td>{originalIndex + 1}</td>
                   <td className={styles.cellFileName}>
                     {result._meta.source_file}
-                    {result._meta.page_number ? ` (p.${result._meta.page_number})` : ""}
+                    {result._meta.page_count > 1 ? ` (${result._meta.page_count}페이지)` : ""}
                   </td>
                   <td>{result.property_number}</td>
                   <td>{result.individual.name}</td>
@@ -184,7 +176,7 @@ export function ReviewTable({
                     <span
                       className={`${styles.confidenceBadge} ${getConfidenceClass(result._meta.confidence)}`}
                     >
-                      {result._meta.confidence}
+                      {result._meta.confidence} {getConfidenceTagKorean(getConfidenceTag(result._meta.confidence))}
                     </span>
                   </td>
                   <td>

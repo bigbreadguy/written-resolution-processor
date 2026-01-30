@@ -53,7 +53,7 @@ export function ApiKeyManager({
     updateStatuses();
     const interval = setInterval(updateStatuses, 1000);
 
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); };
   }, [isOpen, apiKeys]);
 
   const handleAddKey = useCallback(async () => {
@@ -117,11 +117,11 @@ export function ApiKeyManager({
                     <select
                       className={styles.tierSelect}
                       value={keyEntry.tier}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         onUpdateKey(keyEntry.id, {
                           tier: e.target.value as ApiTier,
-                        })
-                      }
+                        });
+                      }}
                     >
                       {TIERS.map((tier) => (
                         <option key={tier} value={tier}>
@@ -144,7 +144,7 @@ export function ApiKeyManager({
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => onRemoveKey(keyEntry.id)}
+                      onClick={() => { onRemoveKey(keyEntry.id); }}
                       className={styles.removeButton}
                     >
                       삭제
@@ -170,7 +170,7 @@ export function ApiKeyManager({
                 placeholder="AIza..."
                 type="password"
                 value={newKey}
-                onChange={(e) => setNewKey(e.target.value)}
+                onChange={(e) => { setNewKey(e.target.value); }}
                 onKeyDown={handleKeyDown}
                 disabled={isValidating}
                 className={styles.keyInput}
@@ -179,7 +179,7 @@ export function ApiKeyManager({
               <select
                 className={styles.tierSelectNew}
                 value={newTier}
-                onChange={(e) => setNewTier(e.target.value as ApiTier)}
+                onChange={(e) => { setNewTier(e.target.value as ApiTier); }}
                 disabled={isValidating}
               >
                 {TIERS.map((tier) => (
@@ -192,7 +192,7 @@ export function ApiKeyManager({
               <Input
                 placeholder="라벨 (선택)"
                 value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
+                onChange={(e) => { setNewLabel(e.target.value); }}
                 onKeyDown={handleKeyDown}
                 disabled={isValidating}
                 className={styles.labelInput}
@@ -200,7 +200,7 @@ export function ApiKeyManager({
             </div>
 
             <Button
-              onClick={handleAddKey}
+              onClick={() => { void handleAddKey(); }}
               disabled={!newKey.trim() || isValidating}
               isLoading={isValidating}
             >

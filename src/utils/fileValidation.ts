@@ -50,7 +50,7 @@ export async function fileToBase64(file: File): Promise<string> {
         reject(new Error("Failed to read file as base64"));
       }
     };
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = () => { reject(reader.error ?? new Error("Failed to read file")); };
     reader.readAsDataURL(file);
   });
 }
@@ -66,7 +66,7 @@ export async function blobToBase64(blob: Blob): Promise<string> {
         reject(new Error("Failed to read blob as base64"));
       }
     };
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = () => { reject(reader.error ?? new Error("Failed to read blob")); };
     reader.readAsDataURL(blob);
   });
 }

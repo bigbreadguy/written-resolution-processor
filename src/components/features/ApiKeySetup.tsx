@@ -92,7 +92,7 @@ export function ApiKeySetup({
             ))}
           </div>
 
-          <form onSubmit={handleAddAnother} className={styles.addMoreForm}>
+          <form onSubmit={(e) => { void handleAddAnother(e); }} className={styles.addMoreForm}>
             <p className={styles.addMoreLabel}>추가 키 등록 (선택사항):</p>
             <div className={styles.inputRow}>
               <Input
@@ -165,7 +165,7 @@ export function ApiKeySetup({
           API 키 발급받기 / Get API Key →
         </a>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={(e) => { void handleSubmit(e); }} className={styles.form}>
           <Input
             label="API Key"
             type="password"

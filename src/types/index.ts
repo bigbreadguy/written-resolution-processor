@@ -30,16 +30,16 @@ export interface Individual {
  * Metadata added by the system during extraction
  */
 export interface ExtractionMetadata {
-  /** Overall confidence level for this extraction */
-  confidence: "high" | "medium" | "low";
+  /** Overall confidence score for this extraction (0-100) */
+  confidence: number;
   /** Whether this item should be flagged for human review */
   requires_review: boolean;
   /** Specific notes about extraction issues */
   extraction_notes: string[];
   /** Original source filename */
   source_file: string;
-  /** Page number (for multi-page PDFs) */
-  page_number?: number | undefined;
+  /** Total page count of the source file */
+  page_count: number;
   /** Processing timestamp */
   processed_at: string;
 }
@@ -74,10 +74,24 @@ export interface GeminiExtractionResponse {
   individual: Partial<Individual> & { name: string };
   votes: VoteItem[];
   _meta: {
-    confidence: "high" | "medium" | "low";
+    confidence: number;
     requires_review: boolean;
     extraction_notes: string[];
   };
+}
+
+/**
+ * Single extraction result within a multi-document batch response
+ */
+export interface GeminiBatchExtractionItem extends GeminiExtractionResponse {
+  source_index: number;
+}
+
+/**
+ * Wrapper object for batch extraction response (object-at-root for backend compatibility)
+ */
+export interface GeminiBatchExtractionResponse {
+  documents: GeminiBatchExtractionItem[];
 }
 
 /**
@@ -277,4 +291,6 @@ export interface ProcessingProgressExtended extends ProcessingProgress {
   isWaitingForKey: boolean;
   /** Estimated wait time in milliseconds */
   waitTimeMs: number;
+  /** Number of documents in the current batch */
+  currentBatchSize: number;
 }

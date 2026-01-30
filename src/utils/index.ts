@@ -14,3 +14,12 @@ export {
 export { withRetry, type RetryOptions } from "./retry";
 
 export { maskKey } from "./string";
+
+export {
+  type ConfidenceTag,
+  CONFIDENCE_THRESHOLDS,
+  getConfidenceTag,
+  getConfidenceClassName,
+  getConfidenceTagKorean,
+  isLowConfidence,
+} from "./confidence";

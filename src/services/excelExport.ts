@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import type { ExtractedResolution } from "@/types";
+import { getConfidenceTag, getConfidenceTagKorean } from "@/utils";
 import type { InspectionReport } from "./inspection";
 
 interface VoteTally {
@@ -55,7 +56,7 @@ function generateSummaryData(results: ExtractedResolution[]): VoteTally[] {
 
 interface DetailRow {
   "원본파일": string;
-  "페이지": number | string;
+  "페이지 수": number;
   "호수": string;
   "성명": string;
   "임차인여부": string;
@@ -89,14 +90,14 @@ function generateDetailData(
 
     const row: DetailRow = {
       "원본파일": result._meta.source_file,
-      "페이지": result._meta.page_number ?? "-",
+      "페이지 수": result._meta.page_count,
       "호수": result.property_number,
       "성명": result.individual.name,
       "임차인여부": result.individual.is_lessee ? "예" : "아니오",
       "생년월일": result.individual.birth_string,
       "주소": result.individual.residential_address,
       "연락처": result.individual.contact_number,
-      "신뢰도": result._meta.confidence,
+      "신뢰도": `${result._meta.confidence} (${getConfidenceTagKorean(getConfidenceTag(result._meta.confidence))})`,
       "검토필요": result._meta.requires_review ? "예" : "아니오",
       "비고": allNotes.join("; "),
     };
@@ -157,7 +158,7 @@ export function exportToXlsx({
   // Set column widths for detail
   detailWs["!cols"] = [
     { wch: 20 }, // 원본파일
-    { wch: 8 },  // 페이지
+    { wch: 10 }, // 페이지 수
     { wch: 10 }, // 호수
     { wch: 12 }, // 성명
     { wch: 10 }, // 임차인여부
@@ -251,8 +252,8 @@ export function generateExportSummary(results: ExtractedResolution[]): {
   return {
     total: results.length,
     needsReview: results.filter((r) => r._meta.requires_review).length,
-    highConfidence: results.filter((r) => r._meta.confidence === "high").length,
-    mediumConfidence: results.filter((r) => r._meta.confidence === "medium").length,
-    lowConfidence: results.filter((r) => r._meta.confidence === "low").length,
+    highConfidence: results.filter((r) => getConfidenceTag(r._meta.confidence) === "HIGH").length,
+    mediumConfidence: results.filter((r) => getConfidenceTag(r._meta.confidence) === "MEDIUM").length,
+    lowConfidence: results.filter((r) => getConfidenceTag(r._meta.confidence) === "LOW").length,
   };
 }
