@@ -18,14 +18,14 @@
 
 .percentage {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text-secondary);
 }
 
 .track {
   width: 100%;
   background-color: var(--color-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
@@ -43,7 +43,19 @@
 
 .fill {
   height: 100%;
-  background-color: var(--color-primary);
-  border-radius: 9999px;
-  transition: width 0.3s ease-out;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s var(--ease-out);
+  background-size: 40px 40px;
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  animation: progressStripe 1s linear infinite;
 }

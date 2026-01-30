@@ -6,26 +6,32 @@
   min-height: 200px;
   padding: 32px;
   border: 2px dashed var(--color-border);
-  border-radius: var(--radius);
-  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(250, 248, 246, 0.6), rgba(252, 232, 236, 0.15));
   cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    background-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .dropZone:hover:not(.disabled) {
   border-color: var(--color-primary);
-  background-color: rgba(37, 99, 235, 0.05);
+  background: linear-gradient(135deg, rgba(252, 232, 236, 0.3), rgba(237, 233, 254, 0.2));
+  box-shadow: var(--shadow-md);
 }
 
 .dropZone:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(232, 84, 106, 0.12);
 }
 
 .dragging {
   border-color: var(--color-primary);
-  background-color: rgba(37, 99, 235, 0.1);
+  background: linear-gradient(135deg, rgba(252, 232, 236, 0.4), rgba(237, 233, 254, 0.3));
+  box-shadow: var(--shadow-glow-primary);
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 .disabled {
