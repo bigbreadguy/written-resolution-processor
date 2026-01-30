@@ -1,8 +1,8 @@
 # Implementation Plan: MVP Features
 
-**Version**: 1.0.0
+**Version**: 1.1.0
 **Created**: 2026-01-28
-**Status**: Approved for Implementation
+**Status**: MVP Complete - Post-MVP Enhancements Implemented
 
 ---
 
@@ -20,7 +20,7 @@ Implement core MVP features: API key management, multi-file upload, Gemini proce
 |----------|--------|------------|
 | Gemini Model | `gemini-2.5-flash` | 92% |
 | Media Resolution | `medium` (560 tokens/image) | 90% |
-| Batch Size | 10 images per request | 90% |
+| Batch Size | Dynamic: max 3 docs, 25K token budget | 90% |
 | PDF Library | `pdfjs-dist` with `?url` worker import | 88% |
 | API Key Storage | localStorage with CSP + user warning | 78% |
 | State Management | React useReducer | 90% |
@@ -63,29 +63,39 @@ src/
 │   │   ├── Input.tsx
 │   │   ├── DropZone.tsx
 │   │   ├── ProgressBar.tsx
-│   │   └── Modal.tsx
+│   │   ├── Modal.tsx
+│   │   └── index.ts
 │   └── features/
 │       ├── AiDisclosure.tsx
+│       ├── ApiKeyManager.tsx
 │       ├── ApiKeySetup.tsx
+│       ├── AppHeader.tsx
+│       ├── DetailModal.tsx
 │       ├── FileUpload.tsx
 │       ├── ProcessingView.tsx
 │       ├── ReviewTable.tsx
-│       └── DetailModal.tsx
+│       └── index.ts
 ├── services/
 │   ├── gemini.ts
 │   ├── pdfParser.ts
-│   └── excelExport.ts
+│   ├── excelExport.ts
+│   ├── rateLimiter.ts
+│   ├── inspection.ts
+│   └── index.ts
 ├── hooks/
-│   ├── useApiKey.ts
-│   ├── useFileUpload.ts
-│   └── useProcessing.ts
+│   ├── useApiKeys.ts
+│   ├── useAiAcknowledgment.ts
+│   └── index.ts
 ├── types/
 │   └── index.ts
 ├── constants/
 │   └── index.ts
 ├── utils/
 │   ├── retry.ts
-│   └── fileValidation.ts
+│   ├── fileValidation.ts
+│   ├── confidence.ts
+│   ├── string.ts
+│   └── index.ts
 ├── App.tsx
 ├── App.module.css
 ├── main.tsx
@@ -115,11 +125,12 @@ src/
 
 ## Phase 3: Gemini Processing
 
-- Model: `gemini-3-flash-preview`
-- Batch size: 10 images
-- Media resolution: `medium` (560 tokens)
-- Structured output with JSON schema
+- Model: `gemini-2.5-flash`
+- Dynamic batching: max 3 docs per batch, 25K token budget per request
+- Media resolution: `medium` (560 tokens per image page)
+- Structured output with JSON schema (single-doc and batch response schemas)
 - Retry with exponential backoff (429, 5xx errors)
+- Quality validation: reject batch if any item confidence < threshold (30); fallback to individual processing
 - Progress tracking per file
 - Cancellation support via AbortController
 
@@ -137,9 +148,57 @@ src/
 
 ## Phase 5: XLSX Export
 
-- Sheet 1: Summary (vote tallies per agenda)
-- Sheet 2: Detail (all extracted fields)
+- Sheet 1: Summary (vote tallies per agenda, including 기표안함 and 기타 columns)
+- Sheet 2: Detail (all extracted fields, page count, numeric confidence, notes)
+- Sheet 3: Verification Report (검증보고서 — inspection findings from post-extraction validation)
 - Include source filename, confidence, review status
+
+---
+
+## Phase 6: Multi-Key Support
+
+- Support adding, removing, and updating multiple API keys
+- Each key has a user-selected tier (free, tier1, tier2) and optional label
+- ApiKeyManager component for key CRUD operations
+- AppHeader component with key count display and manage button
+- Migration from legacy single-key localStorage format
+
+---
+
+## Phase 7: Rate Limiting
+
+- Token bucket algorithm per key (RPM-based capacity)
+- Daily request tracking per key (resets at midnight PT)
+- Automatic key rotation: select key with most available tokens
+- Key status display in UI (available tokens, daily usage, exhaustion state)
+- localStorage persistence for bucket and daily state
+
+---
+
+## Phase 8: Confidence Refactoring
+
+- Confidence changed from string enum (high/medium/low) to numeric (0-100)
+- Utility functions: isLowConfidence, getConfidenceTag, getConfidenceClassName, getConfidenceTagKorean
+- Thresholds: LOW < 50, MEDIUM 50-89, HIGH >= 90
+
+---
+
+## Phase 9: Inspection Service
+
+- Post-extraction validation: detect duplicates, missing votes, name inconsistencies, low confidence, ambiguous votes
+- Generate structured InspectionReport with typed findings
+- Human-readable report formatting for UI display
+- Per-document inspection notes for Excel export integration
+
+---
+
+## Phase 10: Dynamic Batching
+
+- Max 3 documents per batch, 25K token budget per request
+- Dynamic sizing based on per-document page count and estimated token cost
+- Quality validation: reject batch if any item confidence < 30
+- Fallback to individual processing on batch quality failure
+- Batch response schema with source_index for result mapping
 
 ---
 

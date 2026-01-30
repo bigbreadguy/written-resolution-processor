@@ -1,8 +1,8 @@
 # Written Resolution Processor / 서면결의서 처리기
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5-646cff.svg)](https://vitejs.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6-646cff.svg)](https://vitejs.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -64,12 +64,14 @@ Upload Images/PDFs → AI Extraction → Human Review → XLSX Export
 
 ## Features
 
-- [ ] Multi-format upload (JPEG, PNG, PDF, multi-page PDF)
-- [ ] Batch processing (5-10 files per API request)
-- [ ] Structured data extraction (name, address, phone, votes)
-- [ ] Uncertainty flagging for human review
-- [ ] XLSX export with vote tallies
-- [ ] Client-only architecture (your API key, your data)
+- [x] Multi-format upload (JPEG, PNG, WebP, PDF, multi-page PDF)
+- [x] Dynamic batch processing (max 3 docs, 25K token budget per request with quality validation fallback)
+- [x] Structured data extraction (name, address, phone, votes) with 0-100 numeric confidence scoring
+- [x] Post-extraction inspection: duplicate detection, missing votes, name inconsistencies, ambiguous marks
+- [x] Uncertainty flagging for human review
+- [x] XLSX export with vote tallies and verification report
+- [x] Multi-key support with tier-based rate limiting and automatic key rotation
+- [x] Client-only architecture (your API keys, your data)
 
 ---
 
@@ -98,7 +100,7 @@ pnpm dev
 ### Usage
 
 1. Open the app in your browser (default: `http://localhost:5173`)
-2. Enter your Gemini API key (stored locally in your browser)
+2. Add one or more Gemini API keys with tier selection (free, tier1, tier2) — stored locally in your browser
 3. Acknowledge the AI usage notice
 4. Upload scanned resolution documents
 5. Review extracted data (pay attention to flagged items)
@@ -111,8 +113,9 @@ pnpm dev
 | Category | Technology |
 |----------|------------|
 | Framework | React 18 + TypeScript |
-| Build Tool | Vite |
-| AI | Google Gemini API (`@google/generative-ai`) |
+| Build Tool | Vite 6 |
+| AI | Google Gemini API (`@google/generative-ai`) — model: `gemini-2.5-flash` |
+| PDF Parsing | `pdfjs-dist` |
 | Excel Export | SheetJS (`xlsx`) |
 | Styling | CSS Modules |
 | Deployment | Vercel |
@@ -146,6 +149,7 @@ pnpm dev
 ## Documentation
 
 - [Product Specification](./docs/SPEC.md) - Detailed requirements and architecture
+- [Implementation Plan](./docs/IMPLEMENTATION_PLAN.md) - Phased implementation details and file structure
 - [Contributing Guide](./AGENTS.md) - For AI-assisted development
 
 ---
