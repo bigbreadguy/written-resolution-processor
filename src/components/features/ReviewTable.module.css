@@ -158,12 +158,12 @@
 }
 
 .table th {
-  background: var(--gradient-header);
+  background-color: var(--color-bg-secondary);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: white;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
