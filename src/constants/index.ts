@@ -1,6 +1,11 @@
 export const GEMINI_MODEL = "gemini-2.5-flash";
 
-export const BATCH_SIZE = 10;
+export const MAX_DOCS_PER_BATCH = 3;
+export const TOKENS_PER_IMAGE_PAGE = 560;
+export const PROMPT_OVERHEAD_TOKENS = 1_500;
+export const ESTIMATED_RESPONSE_TOKENS_PER_DOC = 800;
+export const TOKEN_BUDGET_PER_REQUEST = 25_000;
+export const BATCH_QUALITY_THRESHOLD = 30;
 
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 

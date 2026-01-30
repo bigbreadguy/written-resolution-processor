@@ -81,6 +81,20 @@ export interface GeminiExtractionResponse {
 }
 
 /**
+ * Single extraction result within a multi-document batch response
+ */
+export interface GeminiBatchExtractionItem extends GeminiExtractionResponse {
+  source_index: number;
+}
+
+/**
+ * Wrapper object for batch extraction response (object-at-root for backend compatibility)
+ */
+export interface GeminiBatchExtractionResponse {
+  documents: GeminiBatchExtractionItem[];
+}
+
+/**
  * Represents a file ready for processing
  */
 export interface ProcessableFile {
@@ -277,4 +291,6 @@ export interface ProcessingProgressExtended extends ProcessingProgress {
   isWaitingForKey: boolean;
   /** Estimated wait time in milliseconds */
   waitTimeMs: number;
+  /** Number of documents in the current batch */
+  currentBatchSize: number;
 }
